@@ -23,12 +23,12 @@ export async function POST(
       )
     }
 
-    const sent = await sessionManager.sendMessage(id, message)
-    if (!sent) {
-      return NextResponse.json(
-        { error: "Session not found or process not running" },
-        { status: 404 },
-      )
+    const result = await sessionManager.sendMessage(id, message)
+    if (!result.success) {
+      if (result.reason === "not_found") {
+        return NextResponse.json({ error: result.error }, { status: 404 })
+      }
+      return NextResponse.json({ error: result.error }, { status: 409 })
     }
 
     return NextResponse.json({ success: true })

@@ -6,11 +6,19 @@ import {
   getServerStatus,
 } from "@/lib/opencode-serve"
 
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   if (!verifyAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  return NextResponse.json(getServerStatus())
+  try {
+    return NextResponse.json(getServerStatus())
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {

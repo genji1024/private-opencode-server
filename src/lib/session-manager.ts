@@ -79,9 +79,10 @@ class SessionManager {
       if (session.status === "running") {
         return { success: false, error: "Process is not running (zombie state)", reason: "not_running" }
       }
+      const detail = session.error ? `: ${session.error}` : " (process has exited)"
       return {
         success: false,
-        error: `Session is ${session.status} (process has exited)`,
+        error: `Session is ${session.status}${detail}`,
         reason: "not_running",
       }
     }
@@ -95,7 +96,7 @@ class SessionManager {
   }
 
   async cancelSession(sessionId: string): Promise<boolean> {
-    const session = store.getSession(sessionId)
+    const session = store.getSession(id)
     if (!session) return false
     return cancelProcess(sessionId)
   }

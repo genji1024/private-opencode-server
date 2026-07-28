@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from "child_process"
+import { spawn, execSync, ChildProcess } from "child_process"
 
 let serverProcess: ChildProcess | null = null
 let serverPort = 4096
@@ -13,9 +13,24 @@ export function getServerUrl(): string {
   return `http://localhost:${serverPort}`
 }
 
+export function checkOpencodeAvailable(): boolean {
+  try {
+    execSync("which opencode", { stdio: "ignore" })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function startServer(): Promise<{ url: string; port: number }> {
   if (isRunning && serverProcess && !serverProcess.killed) {
     return { url: getServerUrl(), port: getServePort() }
+  }
+
+  if (!checkOpencodeAvailable()) {
+    throw new Error(
+      "opencode CLI が見つかりません。PATH に opencode が含まれているか確認してください。",
+    )
   }
 
   serverPort = getServePort()
@@ -33,16 +48,22 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       resolve({ url: getServerUrl(), port: serverPort })
     }, 3000)
 
-    proc.on("error", () => {
+    proc.on("error", (err) => {
       isRunning = false
       serverProcess = null
       clearTimeout(timeout)
-      reject(new Error("opencode serve の起動に失敗しました"))
+      reject(
+        new Error(`opencode serve の起動に失敗しました: ${err.message}`),
+      )
     })
 
-    proc.on("close", () => {
-      isRunning = false
-      serverProcess = null
+    proc.on("close", (code) => {
+      if (code !== 0 && isRunning) {
+        isRunning = false
+        serverProcess = null
+        clearTimeout(timeout)
+        reject(new Error(`opencode serve が終了しました (exit code: ${code})`))
+      }
     })
   })
 }
@@ -71,5 +92,6 @@ export function getServerStatus() {
     port: getServePort(),
     url: getServerUrl(),
     pid: serverProcess?.pid ?? null,
+    opencodeAvailable: checkOpencodeAvailable(),
   }
 }

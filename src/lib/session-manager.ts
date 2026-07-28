@@ -18,6 +18,12 @@ export interface CreateSessionInput {
   instruction: string
 }
 
+export interface SendMessageResult {
+  success: boolean
+  error?: string
+  reason?: "not_found" | "not_running" | "failed"
+}
+
 class SessionManager {
   async create(input: CreateSessionInput): Promise<SessionRow> {
     if (!canStart()) {
@@ -63,10 +69,29 @@ class SessionManager {
     return store.listSessions()
   }
 
-  async sendMessage(sessionId: string, message: string): Promise<boolean> {
+  async sendMessage(sessionId: string, message: string): Promise<SendMessageResult> {
     const session = store.getSession(sessionId)
-    if (!session) return false
-    return sendMessageToProcess(sessionId, message)
+    if (!session) {
+      return { success: false, error: "Session not found", reason: "not_found" }
+    }
+
+    if (!isProcessAlive(sessionId)) {
+      if (session.status === "running") {
+        return { success: false, error: "Process is not running (zombie state)", reason: "not_running" }
+      }
+      return {
+        success: false,
+        error: `Session is ${session.status} (process has exited)`,
+        reason: "not_running",
+      }
+    }
+
+    const ok = sendMessageToProcess(sessionId, message)
+    if (!ok) {
+      return { success: false, error: "Failed to send message (stdin not available)", reason: "failed" }
+    }
+
+    return { success: true }
   }
 
   async cancelSession(sessionId: string): Promise<boolean> {

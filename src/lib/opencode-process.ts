@@ -31,17 +31,13 @@ export async function startOpenCodeProcess(
   instruction: string,
   cwd?: string,
 ): Promise<void> {
-  const args = ["serve"]
-  if (repo) {
-    args.push("--repo", repo)
+  const args = ["run", "--format", "json"]
+  if (instruction) {
+    args.push(instruction)
   }
 
   const proc = spawn("opencode", args, {
     cwd,
-    env: {
-      ...process.env,
-      OPENCODE_INSTRUCTION: instruction,
-    },
     stdio: ["pipe", "pipe", "pipe"],
   })
 
@@ -76,9 +72,11 @@ export async function startOpenCodeProcess(
   return new Promise((resolve) => {
     proc.on("close", (code) => {
       const finishedAt = new Date().toISOString()
+      const error = code !== 0 ? `Process exited with code ${code}` : null
       store.updateSessionStatus(sessionId, code === 0 ? "completed" : "failed", {
         finishedAt,
         exitCode: code,
+        error,
       })
       activeProcesses.delete(sessionId)
       resolve()

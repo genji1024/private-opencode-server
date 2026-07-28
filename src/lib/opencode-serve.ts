@@ -21,7 +21,7 @@ export function getServePort(): number {
 
 export function getServerUrl(): string {
   serverPort = getServePort()
-  return `http://localhost:${serverPort}`
+  return `http://127.0.0.1:${serverPort}`
 }
 
 export function checkOpencodeAvailable(): boolean {
@@ -35,9 +35,30 @@ export function checkOpencodeAvailable(): boolean {
   }
 }
 
+async function isServerReachable(): Promise<boolean> {
+  const url = getServerUrl()
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 2000)
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
+    return res.ok || res.status === 200
+  } catch {
+    return false
+  }
+}
+
 export async function startServer(): Promise<{ url: string; port: number }> {
+  const port = getServePort()
+
+  const reachable = await isServerReachable()
+  if (reachable) {
+    isRunning = true
+    return { url: getServerUrl(), port }
+  }
+
   if (isRunning && serverProcess && !serverProcess.killed) {
-    return { url: getServerUrl(), port: getServePort() }
+    return { url: getServerUrl(), port }
   }
 
   if (!checkOpencodeAvailable()) {
@@ -46,13 +67,13 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     )
   }
 
-  serverPort = getServePort()
+  serverPort = port
   const bin = getOpencodeBin()
 
   return new Promise((resolvePromise, reject) => {
-    const proc = spawn(bin, ["serve", "--port", String(serverPort)], {
+    const proc = spawn(bin, ["serve", "--port", String(port)], {
       stdio: ["ignore", "pipe", "pipe"],
-      detached: false,
+      detached: true,
       env: {
         ...process.env,
         PATH: `${pathResolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
@@ -61,12 +82,27 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
     serverProcess = proc
     isRunning = true
+    proc.unref()
 
-    const timeout = setTimeout(() => {
-      resolvePromise({ url: getServerUrl(), port: serverPort })
-    }, 3000)
+    let settled = false
+
+    const timeout = setTimeout(async () => {
+      if (settled) return
+      const reachable = await isServerReachable()
+      if (reachable) {
+        settled = true
+        resolvePromise({ url: getServerUrl(), port })
+      } else {
+        settled = true
+        isRunning = false
+        serverProcess = null
+        reject(new Error("opencode serve が起動しましたが、接続できませんでした。"))
+      }
+    }, 5000)
 
     proc.on("error", (err) => {
+      if (settled) return
+      settled = true
       isRunning = false
       serverProcess = null
       clearTimeout(timeout)
@@ -76,12 +112,19 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     })
 
     proc.on("close", (code) => {
-      if (code !== 0 && isRunning) {
+      if (settled) return
+      if (code !== 0) {
+        settled = true
         isRunning = false
         serverProcess = null
         clearTimeout(timeout)
         reject(new Error(`opencode serve が終了しました (exit code: ${code})`))
       }
+    })
+
+    let stderr = ""
+    proc.stderr?.on("data", (chunk) => {
+      stderr += chunk.toString()
     })
   })
 }
@@ -89,10 +132,23 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 export function stopServer(): boolean {
   if (!serverProcess || !isRunning) return false
 
-  serverProcess.kill("SIGTERM")
+  try {
+    if (serverProcess.pid) {
+      process.kill(-serverProcess.pid, "SIGTERM")
+    } else {
+      serverProcess.kill("SIGTERM")
+    }
+  } catch {
+    // process may already be dead
+  }
+
   setTimeout(() => {
-    if (serverProcess && isRunning) {
-      serverProcess.kill("SIGKILL")
+    try {
+      if (serverProcess?.pid) {
+        process.kill(-serverProcess.pid, "SIGKILL")
+      }
+    } catch {
+      // ignore
     }
   }, 5000)
 
@@ -100,13 +156,15 @@ export function stopServer(): boolean {
   return true
 }
 
-export function isServerRunning(): boolean {
-  return isRunning && serverProcess !== null && !serverProcess.killed
+export async function isServerRunning(): Promise<boolean> {
+  if (isRunning && serverProcess && !serverProcess.killed) return true
+  return isServerReachable()
 }
 
-export function getServerStatus() {
+export async function getServerStatus() {
+  const reachable = await isServerReachable()
   return {
-    running: isServerRunning(),
+    running: reachable || (isRunning && serverProcess !== null && !serverProcess.killed),
     port: getServePort(),
     url: getServerUrl(),
     pid: serverProcess?.pid ?? null,

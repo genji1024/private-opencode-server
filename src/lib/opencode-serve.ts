@@ -1,8 +1,19 @@
-import { spawn, execSync, ChildProcess } from "child_process"
+import { spawn, ChildProcess } from "child_process"
+import { resolve } from "path"
 
 let serverProcess: ChildProcess | null = null
 let serverPort = 4096
 let isRunning = false
+
+function getOpencodeBin(): string {
+  const localBin = resolve(process.cwd(), "node_modules", ".bin", "opencode")
+  try {
+    require("fs").accessSync(localBin)
+    return localBin
+  } catch {
+    return "opencode"
+  }
+}
 
 export function getServePort(): number {
   return parseInt(process.env.OPENCODE_SERVE_PORT ?? "4096", 10)
@@ -14,8 +25,10 @@ export function getServerUrl(): string {
 }
 
 export function checkOpencodeAvailable(): boolean {
+  const { execSync } = require("child_process")
+  const bin = getOpencodeBin()
   try {
-    execSync("which opencode", { stdio: "ignore" })
+    execSync(`"${bin}" --version`, { stdio: "ignore" })
     return true
   } catch {
     return false
@@ -29,16 +42,21 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
   if (!checkOpencodeAvailable()) {
     throw new Error(
-      "opencode CLI が見つかりません。PATH に opencode が含まれているか確認してください。",
+      "opencode CLI が見つかりません。npm install で opencode-ai がインストールされているか確認してください。",
     )
   }
 
   serverPort = getServePort()
+  const bin = getOpencodeBin()
 
   return new Promise((resolve, reject) => {
-    const proc = spawn("opencode", ["serve", "--port", String(serverPort)], {
+    const proc = spawn(bin, ["serve", "--port", String(serverPort)], {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,
+      env: {
+        ...process.env,
+        PATH: `${resolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
+      },
     })
 
     serverProcess = proc

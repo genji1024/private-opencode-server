@@ -1,4 +1,8 @@
+"use client"
+
 import Link from "next/link"
+import React from "react"
+import { SessionRow } from "@/lib/store"
 
 export default function SessionsPage() {
   return (
@@ -153,6 +157,3 @@ function formatDate(iso: string): string {
   const d = new Date(iso)
   return d.toLocaleString("ja-JP")
 }
-
-import React from "react"
-import { SessionRow } from "@/lib/store"

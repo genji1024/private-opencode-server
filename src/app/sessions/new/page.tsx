@@ -1,11 +1,9 @@
-export default function NewSessionPage() {
-  return <NewSessionForm />
-}
+"use client"
 
 import React from "react"
 import { useRouter } from "next/navigation"
 
-function NewSessionForm() {
+export default function NewSessionPage() {
   const router = useRouter()
 
   const [repo, setRepo] = React.useState("genji1024/private-note")

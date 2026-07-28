@@ -1,3 +1,8 @@
+"use client"
+
+import React from "react"
+import { SessionRow, LogRow } from "@/lib/store"
+
 export default function SessionDetailPage({
   params,
 }: {
@@ -6,11 +11,12 @@ export default function SessionDetailPage({
   return <SessionDetail params={params} />
 }
 
-import React from "react"
-import { SessionRow, LogRow } from "@/lib/store"
-
 function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
-  const id = React.use(params)
+  const [resolvedId, setResolvedId] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    params.then((p) => setResolvedId(p.id))
+  }, [params])
 
   const [session, setSession] = React.useState<SessionRow | null>(null)
   const [logs, setLogs] = React.useState<LogRow[]>([])
@@ -21,13 +27,15 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   const [sendError, setSendError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
+    if (!resolvedId) return
     fetchSession()
-  }, [id])
+  }, [resolvedId])
 
   async function fetchSession() {
+    if (!resolvedId) return
     try {
       setLoading(true)
-      const res = await fetch(`/api/sessions/${id}`)
+      const res = await fetch(`/api/sessions/${resolvedId}`)
       if (!res.ok) throw new Error("Session not found")
       const data = await res.json()
       setSession(data.session)
@@ -40,9 +48,9 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   }
 
   React.useEffect(() => {
-    if (!id || error) return
+    if (!resolvedId || error) return
 
-    const eventSource = new EventSource(`/api/sessions/${id}/stream`)
+    const eventSource = new EventSource(`/api/sessions/${resolvedId}/stream`)
 
     eventSource.onmessage = (event) => {
       try {
@@ -66,16 +74,16 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
     return () => {
       eventSource.close()
     }
-  }, [id, error])
+  }, [resolvedId, error])
 
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault()
-    if (!message.trim()) return
+    if (!message.trim() || !resolvedId) return
 
     try {
       setSending(true)
       setSendError(null)
-      const res = await fetch(`/api/sessions/${id}/message`, {
+      const res = await fetch(`/api/sessions/${resolvedId}/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
@@ -93,9 +101,10 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   }
 
   async function handleCancel() {
+    if (!resolvedId) return
     if (!confirm("このセッションをキャンセルしますか？")) return
     try {
-      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/sessions/${resolvedId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to cancel session")
       fetchSession()
     } catch (err) {

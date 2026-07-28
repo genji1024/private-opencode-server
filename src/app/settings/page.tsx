@@ -1,6 +1,4 @@
-export default function SettingsPage() {
-  return <SettingsForm />
-}
+"use client"
 
 import React from "react"
 
@@ -14,7 +12,7 @@ interface Configs {
   [CONFIG_KEYS.watchedRepos]: string
 }
 
-function SettingsForm() {
+export default function SettingsPage() {
   const [configs, setConfigs] = React.useState<Configs>({
     [CONFIG_KEYS.githubToken]: "",
     [CONFIG_KEYS.watchedRepos]: "",

@@ -40,7 +40,18 @@ export default function Home() {
       </div>
 
       <div className="w-full max-w-4xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Link
+            href="/opencode"
+            className="rounded-lg border-2 border-purple-200 bg-purple-50 p-6 hover:shadow-lg transition-shadow"
+          >
+            <h2 className="text-xl font-semibold mb-2 text-purple-800">
+              OpenCode Web UI &rarr;
+            </h2>
+            <p className="text-sm text-purple-600">
+              opencode の Web UI をブラウザで操作
+            </p>
+          </Link>
           <Link
             href="/sessions"
             className="rounded-lg border p-6 hover:shadow-lg transition-shadow"
@@ -103,15 +114,7 @@ export default function Home() {
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        s.status === "running"
-                          ? "bg-blue-500"
-                          : s.status === "completed"
-                            ? "bg-green-500"
-                            : s.status === "failed"
-                              ? "bg-red-500"
-                              : "bg-yellow-500"
-                      }`}
+                      className={`w-2 h-2 rounded-full ${s.status === "running" ? "bg-blue-500" : s.status === "completed" ? "bg-green-500" : s.status === "failed" ? "bg-red-500" : "bg-yellow-500"}`}
                     />
                     <span className="font-mono text-sm">
                       {s.id.slice(0, 8)}...

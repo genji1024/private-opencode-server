@@ -1,56 +1,108 @@
-export interface Session {
-  id: string
+import { v4 as uuidv4 } from "uuid"
+import { store, SessionRow, LogRow } from "./store"
+import {
+  startOpenCodeProcess,
+  sendMessageToProcess,
+  cancelProcess,
+  isProcessAlive,
+  canStart,
+} from "./opencode-process"
+
+export interface SessionDetail {
+  session: SessionRow
+  logs: LogRow[]
+}
+
+export interface CreateSessionInput {
   repo: string
-  event: string
-  status: "running" | "completed" | "failed"
-  startedAt: string
-  finishedAt?: string
-  logs: string[]
+  instruction: string
+}
+
+export interface SendMessageResult {
+  success: boolean
+  error?: string
+  reason?: "not_found" | "not_running" | "failed"
 }
 
 class SessionManager {
-  private sessions: Map<string, Session> = new Map()
-
-  async create(repo: string, event: string): Promise<Session> {
-    const id = crypto.randomUUID()
-    const session: Session = {
-      id,
-      repo,
-      event,
-      status: "running",
-      startedAt: new Date().toISOString(),
-      logs: [],
+  async create(input: CreateSessionInput): Promise<SessionRow> {
+    if (!canStart()) {
+      throw new Error("Maximum concurrent sessions limit reached")
     }
-    this.sessions.set(id, session)
+
+    const id = uuidv4()
+    const now = new Date().toISOString()
+
+    const session: SessionRow = {
+      id,
+      repo: input.repo,
+      event: "manual",
+      status: "pending",
+      startedAt: now,
+      finishedAt: null,
+      exitCode: null,
+      error: null,
+      pid: null,
+    }
+
+    store.createSession(session)
+
+    startOpenCodeProcess(id, input.repo, input.instruction).catch((err) => {
+      store.updateSessionStatus(id, "failed", {
+        finishedAt: new Date().toISOString(),
+        error: err instanceof Error ? err.message : String(err),
+      })
+    })
+
     return session
   }
 
-  async get(id: string): Promise<Session | null> {
-    return this.sessions.get(id) ?? null
+  async get(id: string): Promise<SessionDetail | null> {
+    const session = store.getSession(id)
+    if (!session) return null
+
+    const logs = store.getLogs(id)
+    return { session, logs }
   }
 
-  async list(): Promise<Session[]> {
-    return Array.from(this.sessions.values())
+  async list(): Promise<SessionRow[]> {
+    return store.listSessions()
   }
 
-  async appendLog(id: string, message: string): Promise<void> {
-    const session = this.sessions.get(id)
-    if (session) {
-      session.logs.push(message)
+  async sendMessage(sessionId: string, message: string): Promise<SendMessageResult> {
+    const session = store.getSession(sessionId)
+    if (!session) {
+      return { success: false, error: "Session not found", reason: "not_found" }
     }
-  }
 
-  async updateStatus(
-    id: string,
-    status: "running" | "completed" | "failed",
-  ): Promise<void> {
-    const session = this.sessions.get(id)
-    if (session) {
-      session.status = status
-      if (status !== "running") {
-        session.finishedAt = new Date().toISOString()
+    if (!isProcessAlive(sessionId)) {
+      if (session.status === "running") {
+        return { success: false, error: "Process is not running (zombie state)", reason: "not_running" }
+      }
+      const detail = session.error ? `: ${session.error}` : " (process has exited)"
+      return {
+        success: false,
+        error: `Session is ${session.status}${detail}`,
+        reason: "not_running",
       }
     }
+
+    const ok = sendMessageToProcess(sessionId, message)
+    if (!ok) {
+      return { success: false, error: "Failed to send message (stdin not available)", reason: "failed" }
+    }
+
+    return { success: true }
+  }
+
+  async cancelSession(sessionId: string): Promise<boolean> {
+    const session = store.getSession(sessionId)
+    if (!session) return false
+    return cancelProcess(sessionId)
+  }
+
+  isAlive(sessionId: string): boolean {
+    return isProcessAlive(sessionId)
   }
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export default function NewSessionPage() {
@@ -42,12 +43,12 @@ export default function NewSessionPage() {
   return (
     <main className="min-h-screen p-8">
       <div className="max-w-2xl mx-auto">
-        <a
+        <Link
           href="/sessions"
           className="text-blue-600 hover:underline mb-4 inline-block"
         >
           ← 一覧に戻る
-        </a>
+        </Link>
 
         <h1 className="text-2xl font-bold mb-6">新規セッション作成</h1>
 
@@ -94,12 +95,12 @@ export default function NewSessionPage() {
             >
               {submitting ? "作成中..." : "作成"}
             </button>
-            <a
+            <Link
               href="/sessions"
               className="px-6 py-2 border rounded hover:bg-gray-50 transition-colors text-center"
             >
               キャンセル
-            </a>
+            </Link>
           </div>
         </form>
       </div>

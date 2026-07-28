@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import Link from "next/link"
 import { SessionRow, LogRow } from "@/lib/store"
 
 export default function SessionDetailPage({
@@ -125,9 +126,9 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
       <main className="min-h-screen p-8">
         <div className="text-red-500">
           {error || "セッションが見つかりません"}
-          <a href="/sessions" className="block mt-4 text-blue-600 hover:underline">
+          <Link href="/sessions" className="block mt-4 text-blue-600 hover:underline">
             ← 一覧に戻る
-          </a>
+          </Link>
         </div>
       </main>
     )
@@ -143,12 +144,12 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
-        <a
+        <Link
           href="/sessions"
           className="text-blue-600 hover:underline mb-4 inline-block"
         >
           ← 一覧に戻る
-        </a>
+        </Link>
 
         <div className="bg-white border rounded-lg p-6 mb-6">
           <div className="flex justify-between items-start mb-4">

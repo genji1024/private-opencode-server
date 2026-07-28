@@ -7,6 +7,7 @@ interface ServerStatus {
   port: number
   url: string
   pid: number | null
+  opencodeAvailable: boolean
 }
 
 export default function OpenCodeEmbedPage() {
@@ -14,6 +15,7 @@ export default function OpenCodeEmbedPage() {
   const [loading, setLoading] = React.useState(true)
   const [iframeLoaded, setIframeLoaded] = React.useState(false)
   const [actionLoading, setActionLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     fetchStatus()
@@ -27,9 +29,13 @@ export default function OpenCodeEmbedPage() {
       if (res.ok) {
         const data = await res.json()
         setStatus(data)
+        setError(null)
+      } else {
+        const data = await res.json().catch(() => null)
+        setError(data?.error ?? `API error: ${res.status}`)
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fetch error")
     } finally {
       setLoading(false)
     }
@@ -37,6 +43,7 @@ export default function OpenCodeEmbedPage() {
 
   async function handleStart() {
     setActionLoading(true)
+    setError(null)
     try {
       const res = await fetch("/api/opencode-serve", {
         method: "POST",
@@ -47,9 +54,12 @@ export default function OpenCodeEmbedPage() {
         const data = await res.json()
         setStatus((prev) => ({ ...prev, ...data, running: true }))
         setIframeLoaded(false)
+      } else {
+        const data = await res.json().catch(() => null)
+        setError(data?.error ?? `起動に失敗しました (HTTP ${res.status})`)
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "起動に失敗しました")
     } finally {
       setActionLoading(false)
     }
@@ -57,6 +67,7 @@ export default function OpenCodeEmbedPage() {
 
   async function handleStop() {
     setActionLoading(true)
+    setError(null)
     try {
       await fetch("/api/opencode-serve", {
         method: "POST",
@@ -65,12 +76,14 @@ export default function OpenCodeEmbedPage() {
       })
       setStatus((prev) => (prev ? { ...prev, running: false, pid: null } : null))
       setIframeLoaded(false)
-    } catch {
-      // ignore
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "停止に失敗しました")
     } finally {
       setActionLoading(false)
     }
   }
+
+  const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false
 
   return (
     <main className="flex h-screen flex-col">
@@ -82,6 +95,11 @@ export default function OpenCodeEmbedPage() {
               className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${status.running ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
             >
               {status.running ? `接続中 (port ${status.port})` : "停止中"}
+            </span>
+          )}
+          {status?.opencodeAvailable === false && (
+            <span className="inline-block rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+              opencode CLI 未検出
             </span>
           )}
           {status?.running && !iframeLoaded && (
@@ -98,7 +116,7 @@ export default function OpenCodeEmbedPage() {
           {!status?.running ? (
             <button
               onClick={handleStart}
-              disabled={actionLoading || loading}
+              disabled={!canStart}
               className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50"
             >
               {actionLoading ? "起動中..." : "サーバー起動"}
@@ -114,6 +132,12 @@ export default function OpenCodeEmbedPage() {
           )}
         </div>
       </div>
+
+      {error && (
+        <div className="border-b bg-red-50 px-6 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="relative flex-1 bg-gray-100">
         {status?.running ? (
@@ -144,12 +168,20 @@ export default function OpenCodeEmbedPage() {
               <p className="mb-2 text-lg text-gray-600">
                 OpenCode サーバーは停止しています
               </p>
-              <p className="mb-6 text-sm text-gray-400">
-                「サーバー起動」ボタンで opencode serve を開始します
-              </p>
+              {status?.opencodeAvailable === false ? (
+                <p className="mb-6 text-sm text-red-500">
+                  opencode CLI が見つかりません。
+                  <br />
+                  サーバー環境に opencode がインストールされているか確認してください。
+                </p>
+              ) : (
+                <p className="mb-6 text-sm text-gray-400">
+                  「サーバー起動」ボタンで opencode serve を開始します
+                </p>
+              )}
               <button
                 onClick={handleStart}
-                disabled={actionLoading || loading}
+                disabled={!canStart}
                 className="rounded bg-green-600 px-6 py-2 text-white hover:bg-green-700 disabled:opacity-50"
               >
                 {actionLoading ? "起動中..." : "サーバー起動"}

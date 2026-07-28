@@ -16,7 +16,8 @@ export function verifyAuth(request: Request): boolean {
   const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]*)/)
   if (match) {
     try {
-      const decoded = Buffer.from(match[1], "base64").toString()
+      const raw = decodeURIComponent(match[1])
+      const decoded = Buffer.from(raw, "base64").toString()
       const [username, password] = decoded.split(":")
       if (username === adminUsername && password === adminPassword) {
         return true

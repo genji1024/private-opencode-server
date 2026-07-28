@@ -96,7 +96,7 @@ class SessionManager {
   }
 
   async cancelSession(sessionId: string): Promise<boolean> {
-    const session = store.getSession(id)
+    const session = store.getSession(sessionId)
     if (!session) return false
     return cancelProcess(sessionId)
   }

@@ -1,12 +1,12 @@
 import { spawn, ChildProcess } from "child_process"
-import { resolve } from "path"
+import { resolve as pathResolve } from "path"
 
 let serverProcess: ChildProcess | null = null
 let serverPort = 4096
 let isRunning = false
 
 function getOpencodeBin(): string {
-  const localBin = resolve(process.cwd(), "node_modules", ".bin", "opencode")
+  const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
   try {
     require("fs").accessSync(localBin)
     return localBin
@@ -49,13 +49,13 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   serverPort = getServePort()
   const bin = getOpencodeBin()
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolvePromise, reject) => {
     const proc = spawn(bin, ["serve", "--port", String(serverPort)], {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,
       env: {
         ...process.env,
-        PATH: `${resolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
+        PATH: `${pathResolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
       },
     })
 
@@ -63,7 +63,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     isRunning = true
 
     const timeout = setTimeout(() => {
-      resolve({ url: getServerUrl(), port: serverPort })
+      resolvePromise({ url: getServerUrl(), port: serverPort })
     }, 3000)
 
     proc.on("error", (err) => {

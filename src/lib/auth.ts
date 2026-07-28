@@ -1,13 +1,28 @@
 export function verifyAuth(request: Request): boolean {
-  const authHeader = request.headers.get("authorization")
-  if (!authHeader || !authHeader.startsWith("Basic ")) return false
-
-  const token = authHeader.slice(6)
-  const decoded = Buffer.from(token, "base64").toString()
-  const [username, password] = decoded.split(":")
-
   const adminUsername = process.env.ADMIN_USERNAME ?? "admin"
   const adminPassword = process.env.ADMIN_PASSWORD ?? ""
 
-  return username === adminUsername && password === adminPassword
+  const authHeader = request.headers.get("authorization")
+  if (authHeader && authHeader.startsWith("Basic ")) {
+    const token = authHeader.slice(6)
+    const decoded = Buffer.from(token, "base64").toString()
+    const [username, password] = decoded.split(":")
+    if (username === adminUsername && password === adminPassword) {
+      return true
+    }
+  }
+
+  const cookieHeader = request.headers.get("cookie") ?? ""
+  const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]*)/)
+  if (match) {
+    try {
+      const decoded = Buffer.from(match[1], "base64").toString()
+      const [username, password] = decoded.split(":")
+      if (username === adminUsername && password === adminPassword) {
+        return true
+      }
+    } catch {}
+  }
+
+  return false
 }

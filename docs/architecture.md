@@ -2,28 +2,32 @@
 
 ## システム構成
 
-```
-┌─────────────────────────────────────────────────┐
-│                   Browser                        │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
-│  │Dashboard │  │ Sessions │  │ OpenCode Web  │  │
-│  │  (home)  │  │  Manager │  │  UI (iframe)  │  │
-│  └────┬─────┘  └────┬─────┘  └──────┬────────┘  │
-│       │              │               │            │
-├───────┼──────────────┼───────────────┼────────────┤
-│       │    Next.js App Router        │            │
-│  ┌────┴─────┐  ┌────┴─────┐  ┌─────┴────────┐  │
-│  │   API    │  │   API    │  │  API Proxy   │  │
-│  │ /sessions│  │ /config  │  │/opencode-serve│  │
-│  └────┬─────┘  └────┴─────┘  └─────┬────────┘  │
-│       │              │               │            │
-│  ┌────┴──────────────┴───┐   ┌─────┴────────┐  │
-│  │   SQLite (store.ts)   │   │ opencode CLI │  │
-│  │   sessions / logs     │   │ serve process│  │
-│  │   configs             │   │              │  │
-│  └───────────────────────┘   └──────────────┘  │
-│                   Server                         │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Browser
+        Dashboard["Dashboard (home)"]
+        Sessions["Session Manager"]
+        OpenCodeUI["OpenCode Web UI (iframe)"]
+    end
+
+    subgraph "Next.js App Router"
+        API_Sessions["API /sessions"]
+        API_Config["API /config"]
+        API_Proxy["API Proxy /opencode-serve"]
+    end
+
+    subgraph Server
+        SQLite["SQLite (store.ts)<br/>sessions / logs / configs"]
+        OpenCodeCLI["opencode CLI<br/>serve process"]
+    end
+
+    Dashboard --> API_Sessions
+    Sessions --> API_Config
+    OpenCodeUI --> API_Proxy
+
+    API_Sessions --> SQLite
+    API_Config --> SQLite
+    API_Proxy --> OpenCodeCLI
 ```
 
 ## ディレクトリ構成
@@ -80,10 +84,6 @@ SQLite (better-sqlite3) を使用したデータ永続化レイヤー。
 - `logs` — セッションごとのログ（stdout/stderr）
 - `configs` — キーバリューストア（設定保存用）
 
-**サーバーレス環境対応:**
-- Vercel 環境では `/tmp` ディレクトリに DB を配置
-- DB 初期化失敗時はグレースフルに 503 を返却
-
 ### セッションマネージャー (`session-manager.ts`)
 
 セッションのライフサイクル管理:
@@ -97,8 +97,6 @@ SQLite (better-sqlite3) を使用したデータ永続化レイヤー。
 - ポート指定でサーバー起動
 - ヘルスチェック（2秒タイムアウト）
 - 起動/停止/ステータス取得
-
-**サーバーレス環境では無効化される。**
 
 ## 認証フロー
 

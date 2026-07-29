@@ -1,41 +1,5 @@
 # デプロイガイド
 
-## デプロイ先の選択
-
-| デプロイ先 | セッション管理 | Web UI | 永続化 | 備考 |
-|-----------|:---:|:---:|:---:|------|
-| Vercel | × | × | × | サーバーレス制約あり |
-| Docker (VPS) | ○ | ○ | ○ | フル機能で動作 |
-| ローカル | ○ | ○ | ○ | 開発用 |
-
-## Vercel へのデプロイ
-
-### 前提条件
-
-- Vercel アカウント
-- GitHub リポジトリとの連携
-
-### デプロイ手順
-
-1. Vercel ダッシュボードで "New Project" をクリック
-2. `private-opencode-server` リポジトリをインポート
-3. 環境変数を設定:
-   - `ADMIN_USERNAME` — 管理者ユーザー名
-   - `ADMIN_PASSWORD` — 管理者パスワード
-4. "Deploy" をクリック
-
-### 環境変数
-
-| 変数名 | 必須 | デフォルト | 説明 |
-|--------|------|-----------|------|
-| `ADMIN_USERNAME` | いいえ | `admin` | Basic Auth のユーザー名 |
-| `ADMIN_PASSWORD` | はい | — | Basic Auth のパスワード |
-| `OPENCODE_SERVE_PORT` | いいえ | `4096` | opencode serve のポート |
-| `OPENCODE_SERVER_URL` | いいえ | `http://127.0.0.1:4096` | opencode serve の URL |
-| `OPENCODE_SERVER_PASSWORD` | いいえ | — | opencode serve のパスワード |
-| `GITHUB_WEBHOOK_SECRET` | いいえ | — | GitHub Webhook のシークレット |
-| `BASE_URL` | いいえ | 自動判定 | ベース URL の手動指定（`https://example.com` 形式）。未設定時はヘッダーから自動判定 |
-
 ## Docker / VPS へのデプロイ
 
 Docker を使用して VPS にデプロイすると、セッション管理・OpenCode Web UI・永続データストレージを含むフル機能が利用できます。
@@ -121,54 +85,19 @@ server {
 
 Docker Compose は `app-data` ボリュームを使用し、`/tmp/opencode-server-data` にデータを保存します。コンテナを再起動してもセッション・ログ・設定は保持されます。
 
-## サーバーレス環境の制限事項
-
-Vercel はサーバーレスプラットフォームのため、以下の機能は**利用できません**:
-
-### 利用できない機能
-
-| 機能 | 理由 |
-|------|------|
-| セッション管理（プロセス起動） | `child_process.spawn` がサーバーレスで動作しない |
-| OpenCode Web UI | `opencode serve` プロセスを起動できない |
-| 永続的なデータ保存 | SQLite が `/tmp` に配置されるため、コールドスタート間でリセット |
-
-### 利用可能な機能
-
-- ダッシュボード表示（セッション一覧は空になる）
-- 認証（ログイン/ログアウト）
-- 設定管理（ただしコールドスタート間でリセット）
-- GitHub Webhook 受信
-
-### ローカル環境での利用
-
-フル機能を利用するには、ローカル環境で実行してください:
-
-```bash
-npm install
-npm run dev
-```
-
 ## デプロイ後の確認
 
 1. デプロイ URL にアクセス
 2. ログインページが表示されることを確認
 3. 認証情報でログイン
 4. ダッシュボードが表示されることを確認
-5. OpenCode Web UI ページで「サーバーレス環境では利用できません」のメッセージが表示されることを確認
 
 ## トラブルシューティング
 
 ### ログインできない
 
-- Vercel の環境変数で `ADMIN_USERNAME` と `ADMIN_PASSWORD` が正しく設定されているか確認
+- 環境変数で `ADMIN_USERNAME` と `ADMIN_PASSWORD` が正しく設定されているか確認
 - ブラウザの Cookie が有効になっているか確認
-
-### ダッシュボードがエラーを表示
-
-- Vercel の Functions ログを確認
-- `better-sqlite3` のネイティブモジュールが正しくビルドされているか確認
-  - Vercel は自動でネイティブモジュールをビルドするはず
 
 ### ビルドが失敗する
 

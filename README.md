@@ -17,7 +17,7 @@ GitHub Webhook との連携により、リポジトリへの push イベント�
 | スタイリング | Tailwind CSS 4 |
 | データベース | SQLite (better-sqlite3) |
 | プロセス管理 | child_process (opencode CLI) |
-| デプロイ | Vercel / Docker (VPS) |
+| デプロイ | Docker (VPS) |
 
 ## 機能
 
@@ -77,9 +77,9 @@ docker compose up -d
 - [アーキテクチャ](docs/architecture.md) — システム構成・コンポーネント設計
 - [機能詳細](docs/features.md) — 各機能の詳細な説明
 - [API リファレンス](docs/api.md) — REST API のエンドポイント一覧
-- [デプロイガイド](docs/deployment.md) — Vercel / Docker (VPS) へのデプロイ手順
+- [デプロイガイド](docs/deployment.md) — Docker (VPS) へのデプロイ手順
 - [開発ガイド](docs/development.md) — 開発環境の構築・テスト・Lint
 
 ## ライセンス
 
-Private — 非公開プロジェクト
+MIT

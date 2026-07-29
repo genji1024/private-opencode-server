@@ -27,12 +27,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   const [sending, setSending] = React.useState(false)
   const [sendError, setSendError] = React.useState<string | null>(null)
 
-  React.useEffect(() => {
-    if (!resolvedId) return
-    fetchSession()
-  }, [resolvedId])
-
-  async function fetchSession() {
+  const fetchSession = React.useCallback(async () => {
     if (!resolvedId) return
     try {
       setLoading(true)
@@ -46,7 +41,12 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [resolvedId])
+
+  React.useEffect(() => {
+    if (!resolvedId) return
+    fetchSession()
+  }, [resolvedId, fetchSession])
 
   React.useEffect(() => {
     if (!resolvedId || error) return

@@ -1,15 +1,14 @@
-FROM node:20-alpine AS base
+FROM node:20-bookworm AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json ./
 RUN npm install
 
 # Rebuild the source code only when needed
-FROM node:20-bookworm AS builder
+FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

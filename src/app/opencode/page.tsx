@@ -16,6 +16,7 @@ export default function OpenCodeEmbedPage() {
   const [iframeLoaded, setIframeLoaded] = React.useState(false)
   const [actionLoading, setActionLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [iframeKey, setIframeKey] = React.useState(0)
 
   React.useEffect(() => {
     fetchStatus()
@@ -54,6 +55,7 @@ export default function OpenCodeEmbedPage() {
         const data = await res.json()
         setStatus((prev) => ({ ...prev, ...data, running: true }))
         setIframeLoaded(false)
+        setIframeKey((k) => k + 1)
       } else {
         const data = await res.json().catch(() => null)
         setError(data?.error ?? `起動に失敗しました (HTTP ${res.status})`)
@@ -155,6 +157,7 @@ export default function OpenCodeEmbedPage() {
               </div>
             )}
             <iframe
+              key={iframeKey}
               src={status.url}
               className={`h-full w-full border-0 ${iframeLoaded ? "" : "invisible"}`}
               onLoad={() => setIframeLoaded(true)}

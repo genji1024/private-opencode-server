@@ -1,5 +1,6 @@
-import { spawn, ChildProcess } from "child_process"
+import { spawn, execSync, ChildProcess } from "child_process"
 import { resolve as pathResolve } from "path"
+import { existsSync } from "fs"
 
 let serverProcess: ChildProcess | null = null
 let serverPort = 4096
@@ -7,11 +8,33 @@ let isRunning = false
 
 function getOpencodeBin(): string {
   const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
-  try {
-    require("fs").accessSync(localBin)
+  if (existsSync(localBin)) {
     return localBin
+  }
+  return "opencode"
+}
+
+function getPostinstallScript(): string | null {
+  const postinstallPath = pathResolve(
+    process.cwd(),
+    "node_modules",
+    "opencode-ai",
+    "postinstall.mjs",
+  )
+  if (existsSync(postinstallPath)) {
+    return postinstallPath
+  }
+  return null
+}
+
+function runPostinstall(): boolean {
+  const script = getPostinstallScript()
+  if (!script) return false
+  try {
+    execSync(`node "${script}"`, { stdio: "inherit", cwd: process.cwd() })
+    return true
   } catch {
-    return "opencode"
+    return false
   }
 }
 
@@ -25,12 +48,19 @@ export function getServerUrl(): string {
 }
 
 export function checkOpencodeAvailable(): boolean {
-  const { execSync } = require("child_process")
   const bin = getOpencodeBin()
   try {
     execSync(`"${bin}" --version`, { stdio: "ignore" })
     return true
   } catch {
+    if (runPostinstall()) {
+      try {
+        execSync(`"${bin}" --version`, { stdio: "ignore" })
+        return true
+      } catch {
+        return false
+      }
+    }
     return false
   }
 }
@@ -73,7 +103,6 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   return new Promise((resolvePromise, reject) => {
     const proc = spawn(bin, ["serve", "--port", String(port)], {
       stdio: ["ignore", "pipe", "pipe"],
-      detached: true,
       env: {
         ...process.env,
         PATH: `${pathResolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
@@ -82,7 +111,6 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
     serverProcess = proc
     isRunning = true
-    proc.unref()
 
     let settled = false
 
@@ -98,7 +126,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
         serverProcess = null
         reject(new Error("opencode serve が起動しましたが、接続できませんでした。"))
       }
-    }, 5000)
+    }, 8000)
 
     proc.on("error", (err) => {
       if (settled) return
@@ -112,19 +140,17 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     })
 
     proc.on("close", (code) => {
-      if (settled) return
-      if (code !== 0) {
+      isRunning = false
+      serverProcess = null
+      if (!settled) {
         settled = true
-        isRunning = false
-        serverProcess = null
         clearTimeout(timeout)
         reject(new Error(`opencode serve が終了しました (exit code: ${code})`))
       }
     })
 
-    let stderr = ""
-    proc.stderr?.on("data", (chunk) => {
-      stderr += chunk.toString()
+    proc.stderr?.on("data", () => {
+      // consume stderr to prevent backpressure
     })
   })
 }
@@ -133,26 +159,21 @@ export function stopServer(): boolean {
   if (!serverProcess || !isRunning) return false
 
   try {
-    if (serverProcess.pid) {
-      process.kill(-serverProcess.pid, "SIGTERM")
-    } else {
-      serverProcess.kill("SIGTERM")
-    }
+    serverProcess.kill("SIGTERM")
   } catch {
     // process may already be dead
   }
 
   setTimeout(() => {
     try {
-      if (serverProcess?.pid) {
-        process.kill(-serverProcess.pid, "SIGKILL")
-      }
+      serverProcess?.kill("SIGKILL")
     } catch {
       // ignore
     }
   }, 5000)
 
   isRunning = false
+  serverProcess = null
   return true
 }
 

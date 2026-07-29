@@ -8,6 +8,7 @@ interface ServerStatus {
   url: string
   pid: number | null
   opencodeAvailable: boolean
+  serverless?: boolean
 }
 
 export default function OpenCodeEmbedPage() {
@@ -85,7 +86,7 @@ export default function OpenCodeEmbedPage() {
     }
   }
 
-  const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false
+  const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false && !status?.serverless
 
   return (
     <main className="flex h-screen flex-col">
@@ -99,7 +100,12 @@ export default function OpenCodeEmbedPage() {
               {status.running ? `接続中 (port ${status.port})` : "停止中"}
             </span>
           )}
-          {status?.opencodeAvailable === false && (
+          {status?.serverless && (
+            <span className="inline-block rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+              サーバーレス環境
+            </span>
+          )}
+          {status?.opencodeAvailable === false && !status?.serverless && (
             <span className="inline-block rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
               opencode CLI 未検出
             </span>
@@ -142,7 +148,22 @@ export default function OpenCodeEmbedPage() {
       )}
 
       <div className="relative flex-1 bg-gray-100">
-        {status?.running ? (
+        {status?.serverless ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="max-w-md text-center">
+              <div className="mb-4 text-6xl">&#9888;</div>
+              <p className="mb-2 text-lg font-semibold text-gray-700">
+                サーバーレス環境では利用できません
+              </p>
+              <p className="text-sm text-gray-500">
+                OpenCode Web UI（opencode serve）は、長時間稼働するサーバープロセスが必要なため、
+                Vercel 等のサーバーレス環境では動作しません。
+                <br /><br />
+                ローカル環境で <code className="rounded bg-gray-200 px-1">npm run dev</code> を実行して利用してください。
+              </p>
+            </div>
+          </div>
+        ) : status?.running ? (
           <>
             {!iframeLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">

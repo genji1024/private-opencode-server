@@ -33,5 +33,11 @@
     "prettier": "^3.5.3",
     "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.2": true,
+    "opencode-ai@1.18.9": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
   }
 }

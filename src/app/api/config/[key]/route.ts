@@ -12,6 +12,13 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  if (!store.isAvailable()) {
+    return NextResponse.json(
+      { error: "Database not available", detail: store.getInitError() },
+      { status: 503 },
+    )
+  }
+
   try {
     const body = await request.json()
     const { value } = body
@@ -35,6 +42,13 @@ export async function DELETE(
 
   if (!verifyAuth(_request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (!store.isAvailable()) {
+    return NextResponse.json(
+      { error: "Database not available", detail: store.getInitError() },
+      { status: 503 },
+    )
   }
 
   store.deleteConfig(key)

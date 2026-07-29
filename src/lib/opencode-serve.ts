@@ -6,6 +6,14 @@ let serverProcess: ChildProcess | null = null
 let serverPort = 4096
 let isRunning = false
 
+function isServerless(): boolean {
+  return !!(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY
+  )
+}
+
 function getOpencodeBin(): string {
   const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
   if (existsSync(localBin)) {
@@ -48,6 +56,7 @@ export function getServerUrl(): string {
 }
 
 export function checkOpencodeAvailable(): boolean {
+  if (isServerless()) return false
   const bin = getOpencodeBin()
   try {
     execSync(`"${bin}" --version`, { stdio: "ignore" })
@@ -66,6 +75,7 @@ export function checkOpencodeAvailable(): boolean {
 }
 
 async function isServerReachable(): Promise<boolean> {
+  if (isServerless()) return false
   const url = getServerUrl()
   try {
     const controller = new AbortController()
@@ -79,6 +89,12 @@ async function isServerReachable(): Promise<boolean> {
 }
 
 export async function startServer(): Promise<{ url: string; port: number }> {
+  if (isServerless()) {
+    throw new Error(
+      "サーバーレス環境（Vercel等）では opencode serve を起動できません。ローカル環境で実行してください。",
+    )
+  }
+
   const port = getServePort()
 
   const reachable = await isServerReachable()
@@ -156,6 +172,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 }
 
 export function stopServer(): boolean {
+  if (isServerless()) return false
   if (!serverProcess || !isRunning) return false
 
   try {
@@ -178,17 +195,18 @@ export function stopServer(): boolean {
 }
 
 export async function isServerRunning(): Promise<boolean> {
+  if (isServerless()) return false
   if (isRunning && serverProcess && !serverProcess.killed) return true
   return isServerReachable()
 }
 
 export async function getServerStatus() {
-  const reachable = await isServerReachable()
   return {
-    running: reachable || (isRunning && serverProcess !== null && !serverProcess.killed),
+    running: false,
     port: getServePort(),
     url: getServerUrl(),
-    pid: serverProcess?.pid ?? null,
+    pid: null,
     opencodeAvailable: checkOpencodeAvailable(),
+    serverless: isServerless(),
   }
 }

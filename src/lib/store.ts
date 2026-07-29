@@ -2,7 +2,14 @@ import Database from "better-sqlite3"
 import path from "path"
 import fs from "fs"
 
-const DATA_DIR = path.join(process.cwd(), "data")
+function getDataDir(): string {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join("/tmp", "opencode-server-data")
+  }
+  return path.join(process.cwd(), "data")
+}
+
+const DATA_DIR = getDataDir()
 const DB_PATH = path.join(DATA_DIR, "opencode-server.db")
 
 export interface SessionRow {
@@ -32,19 +39,36 @@ export interface ConfigRow {
 }
 
 class Store {
-  private db: Database.Database
+  private db: Database.Database | null = null
+  private initError: string | null = null
 
   constructor() {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true })
+    this.initDb()
+  }
+
+  private initDb(): void {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true })
+      }
+      this.db = new Database(DB_PATH)
+      this.db.pragma("journal_mode = WAL")
+      this.migrate()
+    } catch (err) {
+      this.initError = err instanceof Error ? err.message : String(err)
+      this.db = null
     }
-    this.db = new Database(DB_PATH)
-    this.db.pragma("journal_mode = WAL")
-    this.migrate()
+  }
+
+  private getDb(): Database.Database {
+    if (!this.db) {
+      throw new Error(`Database not available: ${this.initError ?? "unknown error"}`)
+    }
+    return this.db
   }
 
   private migrate(): void {
-    this.db.exec(`
+    this.db!.exec(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         repo TEXT NOT NULL,
@@ -77,7 +101,7 @@ class Store {
   }
 
   createSession(session: SessionRow): void {
-    const stmt = this.db.prepare(`
+    const stmt = this.getDb().prepare(`
       INSERT INTO sessions (id, repo, event, status, startedAt, finishedAt, exitCode, error, pid)
       VALUES (@id, @repo, @event, @status, @startedAt, @finishedAt, @exitCode, @error, @pid)
     `)
@@ -85,12 +109,12 @@ class Store {
   }
 
   getSession(id: string): SessionRow | undefined {
-    const stmt = this.db.prepare("SELECT * FROM sessions WHERE id = ?")
+    const stmt = this.getDb().prepare("SELECT * FROM sessions WHERE id = ?")
     return stmt.get(id) as SessionRow | undefined
   }
 
   listSessions(): SessionRow[] {
-    const stmt = this.db.prepare("SELECT * FROM sessions ORDER BY startedAt DESC")
+    const stmt = this.getDb().prepare("SELECT * FROM sessions ORDER BY startedAt DESC")
     return stmt.all() as SessionRow[]
   }
 
@@ -117,11 +141,11 @@ class Store {
       sets.push("pid = @pid")
       params.pid = extras.pid
     }
-    this.db.prepare(`UPDATE sessions SET ${sets.join(", ")} WHERE id = @id`).run(params)
+    this.getDb().prepare(`UPDATE sessions SET ${sets.join(", ")} WHERE id = @id`).run(params)
   }
 
   insertLog(log: LogRow): void {
-    const stmt = this.db.prepare(`
+    const stmt = this.getDb().prepare(`
       INSERT INTO logs (id, sessionId, timestamp, stream, text)
       VALUES (@id, @sessionId, @timestamp, @stream, @text)
     `)
@@ -129,20 +153,20 @@ class Store {
   }
 
   getLogs(sessionId: string): LogRow[] {
-    const stmt = this.db.prepare(
+    const stmt = this.getDb().prepare(
       "SELECT * FROM logs WHERE sessionId = ? ORDER BY timestamp ASC",
     )
     return stmt.all(sessionId) as LogRow[]
   }
 
   getConfig(key: string): string | undefined {
-    const stmt = this.db.prepare("SELECT value FROM configs WHERE key = ?")
+    const stmt = this.getDb().prepare("SELECT value FROM configs WHERE key = ?")
     const row = stmt.get(key) as { value: string } | undefined
     return row?.value
   }
 
   setConfig(key: string, value: string): void {
-    const stmt = this.db.prepare(`
+    const stmt = this.getDb().prepare(`
       INSERT INTO configs (key, value, updatedAt)
       VALUES (@key, @value, @updatedAt)
       ON CONFLICT(key) DO UPDATE SET value = @value, updatedAt = @updatedAt
@@ -151,16 +175,25 @@ class Store {
   }
 
   deleteConfig(key: string): void {
-    this.db.prepare("DELETE FROM configs WHERE key = ?").run(key)
+    this.getDb().prepare("DELETE FROM configs WHERE key = ?").run(key)
   }
 
   listConfigs(): ConfigRow[] {
-    const stmt = this.db.prepare("SELECT * FROM configs ORDER BY key")
+    const stmt = this.getDb().prepare("SELECT * FROM configs ORDER BY key")
     return stmt.all() as ConfigRow[]
   }
 
+  isAvailable(): boolean {
+    return this.db !== null
+  }
+
+  getInitError(): string | null {
+    return this.initError
+  }
+
   close(): void {
-    this.db.close()
+    this.db?.close()
+    this.db = null
   }
 }
 

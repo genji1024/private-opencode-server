@@ -9,7 +9,7 @@ COPY package.json ./
 RUN npm install
 
 # Rebuild the source code only when needed
-FROM base AS builder
+FROM node:20-bookworm AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

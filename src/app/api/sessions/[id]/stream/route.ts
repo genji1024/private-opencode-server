@@ -12,6 +12,10 @@ export async function GET(
     return new Response("Unauthorized", { status: 401 })
   }
 
+  if (!store.isAvailable()) {
+    return new Response(`Database not available: ${store.getInitError() ?? "unknown"}`, { status: 503 })
+  }
+
   const session = store.getSession(id)
   if (!session) {
     return new Response("Session not found", { status: 404 })

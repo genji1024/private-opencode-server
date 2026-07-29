@@ -17,11 +17,20 @@ export interface ManagedProcess {
 const activeProcesses = new Map<string, ManagedProcess>()
 const MAX_CONCURRENT = 5
 
+function isServerless(): boolean {
+  return !!(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY
+  )
+}
+
 export function getActiveCount(): number {
   return activeProcesses.size
 }
 
 export function canStart(): boolean {
+  if (isServerless()) return false
   return activeProcesses.size < MAX_CONCURRENT
 }
 
@@ -31,6 +40,14 @@ export async function startOpenCodeProcess(
   instruction: string,
   cwd?: string,
 ): Promise<void> {
+  if (isServerless()) {
+    store.updateSessionStatus(sessionId, "failed", {
+      finishedAt: new Date().toISOString(),
+      error: "サーバーレス環境ではプロセス管理が利用できません。ローカル環境で実行してください。",
+    })
+    return
+  }
+
   const args = ["run", "--format", "json"]
   if (instruction) {
     args.push(instruction)

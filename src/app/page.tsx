@@ -3,6 +3,8 @@
 import Link from "next/link"
 import React from "react"
 import { SessionRow } from "@/lib/store"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 export default function Home() {
   const [sessions, setSessions] = React.useState<SessionRow[]>([])
@@ -31,111 +33,147 @@ export default function Home() {
   const recentSessions = sessions.slice(0, 5)
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-4">OpenCode Server</h1>
-        <p className="text-lg text-gray-600">
-          OpenCode ヘッドレスサーバーの管理ダッシュボード
-        </p>
-      </div>
+    <main className="min-h-screen p-6 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight">OpenCode Server</h1>
+          <p className="mt-2 text-muted-foreground">
+            OpenCode ヘッドレスサーバーの管理ダッシュボード
+          </p>
+        </div>
 
-      <div className="w-full max-w-4xl">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Link
-            href="/opencode"
-            className="rounded-lg border-2 border-purple-200 bg-purple-50 p-6 hover:shadow-lg transition-shadow"
-          >
-            <h2 className="text-xl font-semibold mb-2 text-purple-800">
-              OpenCode Web UI &rarr;
-            </h2>
-            <p className="text-sm text-purple-600">
-              opencode の Web UI をブラウザで操作
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Link href="/opencode">
+            <Card className="hover:shadow-md transition-shadow border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <polyline points="4 17 10 11 4 5" />
+                    <line x1="12" x2="20" y1="19" y2="19" />
+                  </svg>
+                  OpenCode Web UI
+                </CardTitle>
+                <CardDescription>opencode の Web UI をブラウザで操作</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
-          <Link
-            href="/sessions"
-            className="rounded-lg border p-6 hover:shadow-lg transition-shadow"
-          >
-            <h2 className="text-xl font-semibold mb-2">セッション管理 &rarr;</h2>
-            <p className="text-sm text-gray-500">
-              実行中のセッション一覧と詳細を確認
-            </p>
+          <Link href="/sessions">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">セッション管理</CardTitle>
+                <CardDescription>実行中のセッション一覧と詳細を確認</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
-          <Link
-            href="/sessions/new"
-            className="rounded-lg border p-6 hover:shadow-lg transition-shadow"
-          >
-            <h2 className="text-xl font-semibold mb-2">新規セッション &rarr;</h2>
-            <p className="text-sm text-gray-500">
-              新しい opencode セッションを開始
-            </p>
+          <Link href="/sessions/new">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">新規セッション</CardTitle>
+                <CardDescription>新しい opencode セッションを開始</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
-          <Link
-            href="/settings"
-            className="rounded-lg border p-6 hover:shadow-lg transition-shadow"
-          >
-            <h2 className="text-xl font-semibold mb-2">設定 &rarr;</h2>
-            <p className="text-sm text-gray-500">
-              トークン・リポジトリ設定の管理
-            </p>
+          <Link href="/settings">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">設定</CardTitle>
+                <CardDescription>トークン・リポジトリ設定の管理</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="rounded-lg border p-6 bg-blue-50">
-            <h3 className="text-lg font-semibold text-blue-800">
-              {loading ? "..." : activeSessions}
-            </h3>
-            <p className="text-sm text-blue-600">アクティブなセッション</p>
-          </div>
-          <div className="rounded-lg border p-6 bg-green-50">
-            <h3 className="text-lg font-semibold text-green-800">
-              {loading ? "..." : completedSessions}
-            </h3>
-            <p className="text-sm text-green-600">完了したセッション</p>
-          </div>
-          <div className="rounded-lg border p-6 bg-red-50">
-            <h3 className="text-lg font-semibold text-red-800">
-              {loading ? "..." : failedSessions}
-            </h3>
-            <p className="text-sm text-red-600">失敗したセッション</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>アクティブなセッション</CardDescription>
+              <CardTitle className="text-3xl text-blue-600">
+                {loading ? "..." : activeSessions}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>完了したセッション</CardDescription>
+              <CardTitle className="text-3xl text-green-600">
+                {loading ? "..." : completedSessions}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>失敗したセッション</CardDescription>
+              <CardTitle className="text-3xl text-red-600">
+                {loading ? "..." : failedSessions}
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
 
         {!loading && !error && recentSessions.length > 0 && (
-          <div className="rounded-lg border p-6">
-            <h2 className="text-lg font-semibold mb-4">直近のセッション</h2>
-            <div className="space-y-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>直近のセッション</CardTitle>
+            </CardHeader>
+            <div className="divide-y">
               {recentSessions.map((s) => (
                 <Link
                   key={s.id}
                   href={`/sessions/${s.id}`}
-                  className="flex justify-between items-center p-3 hover:bg-gray-50 rounded transition-colors"
+                  className="flex justify-between items-center p-4 hover:bg-accent/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`w-2 h-2 rounded-full ${s.status === "running" ? "bg-blue-500" : s.status === "completed" ? "bg-green-500" : s.status === "failed" ? "bg-red-500" : "bg-yellow-500"}`}
-                    />
-                    <span className="font-mono text-sm">
+                    <StatusDot status={s.status} />
+                    <span className="font-mono text-sm text-muted-foreground">
                       {s.id.slice(0, 8)}...
                     </span>
-                    <span className="text-sm text-gray-600">{s.repo}</span>
+                    <span className="text-sm">{s.repo}</span>
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(s.startedAt).toLocaleString("ja-JP")}
                   </span>
                 </Link>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {error && (
-          <div className="rounded-lg border p-6 bg-red-50 text-red-700">
-            ダッシュボードの読み込みに失敗しました: {error}
-          </div>
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="text-destructive">エラー</CardTitle>
+              <CardDescription>
+                ダッシュボードの読み込みに失敗しました: {error}
+              </CardDescription>
+            </CardHeader>
+          </Card>
         )}
       </div>
     </main>
+  )
+}
+
+function StatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    running: "bg-blue-500",
+    completed: "bg-green-500",
+    failed: "bg-red-500",
+    pending: "bg-yellow-500",
+  }
+  return (
+    <span
+      className={`w-2 h-2 rounded-full ${colors[status] || "bg-gray-500"}`}
+    />
   )
 }

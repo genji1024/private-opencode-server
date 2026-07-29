@@ -3,17 +3,25 @@
 import Link from "next/link"
 import React from "react"
 import { SessionRow } from "@/lib/store"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 export default function SessionsPage() {
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">セッション一覧</h1>
-          <Link
-            href="/sessions/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-          >
+          <h1 className="text-2xl font-bold tracking-tight">セッション一覧</h1>
+          <Link href="/sessions/new" className={buttonVariants()}>
             + 新規セッション
           </Link>
         </div>
@@ -58,84 +66,99 @@ function SessionList() {
   }
 
   if (loading) {
-    return <div className="text-gray-500">読み込み中...</div>
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          読み込み中...
+        </CardContent>
+      </Card>
+    )
   }
 
   if (error) {
-    return <div className="text-red-500">エラー: {error}</div>
+    return (
+      <Card className="border-destructive">
+        <CardContent className="py-12 text-center text-destructive">
+          エラー: {error}
+        </CardContent>
+      </Card>
+    )
   }
 
   if (sessions.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg mb-4">セッションがありません</p>
-        <Link
-          href="/sessions/new"
-          className="text-blue-600 hover:underline"
-        >
-          最初のセッションを作成する
-        </Link>
-      </div>
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-lg mb-4 text-muted-foreground">セッションがありません</p>
+          <Link href="/sessions/new" className="text-primary hover:underline text-sm font-medium">
+            最初のセッションを作成する
+          </Link>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b text-left">
-            <th className="py-3 px-4 font-medium text-gray-600">ID</th>
-            <th className="py-3 px-4 font-medium text-gray-600">リポジトリ</th>
-            <th className="py-3 px-4 font-medium text-gray-600">ステータス</th>
-            <th className="py-3 px-4 font-medium text-gray-600">開始時刻</th>
-            <th className="py-3 px-4 font-medium text-gray-600">アクション</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sessions.map((session) => (
-            <tr key={session.id} className="border-b hover:bg-gray-50">
-              <td className="py-3 px-4 font-mono text-sm">
-                {session.id.slice(0, 8)}...
-              </td>
-              <td className="py-3 px-4">{session.repo}</td>
-              <td className="py-3 px-4">
-                <StatusBadge status={session.status} />
-              </td>
-              <td className="py-3 px-4 text-sm text-gray-500">
-                {formatDate(session.startedAt)}
-              </td>
-              <td className="py-3 px-4">
-                <div className="flex gap-2">
-                  <Link
-                    href={`/sessions/${session.id}`}
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    詳細
-                  </Link>
-                  {session.status === "running" && (
-                    <button
-                      onClick={() => handleCancel(session.id)}
-                      className="text-red-600 hover:underline text-sm"
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[120px]">ID</TableHead>
+              <TableHead>リポジトリ</TableHead>
+              <TableHead className="w-[120px]">ステータス</TableHead>
+              <TableHead className="w-[180px]">開始時刻</TableHead>
+              <TableHead className="w-[150px]">アクション</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sessions.map((session) => (
+              <TableRow key={session.id}>
+                <TableCell className="font-mono text-sm">
+                  {session.id.slice(0, 8)}...
+                </TableCell>
+                <TableCell>{session.repo}</TableCell>
+                <TableCell>
+                  <StatusBadge status={session.status} />
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {formatDate(session.startedAt)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/sessions/${session.id}`}
+                      className={buttonVariants({ variant: "link", size: "sm" })}
                     >
-                      キャンセル
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                      詳細
+                    </Link>
+                    {session.status === "running" && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleCancel(session.id)}
+                      >
+                        キャンセル
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    running: "bg-blue-100 text-blue-800",
-    completed: "bg-green-100 text-green-800",
-    failed: "bg-red-100 text-red-800",
-    pending: "bg-yellow-100 text-yellow-800",
+  const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    running: "default",
+    completed: "secondary",
+    failed: "destructive",
+    pending: "outline",
   }
   const labels: Record<string, string> = {
     running: "実行中",
@@ -145,11 +168,9 @@ function StatusBadge({ status }: { status: string }) {
   }
 
   return (
-    <span
-      className={`inline-block px-2 py-1 rounded text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-800"}`}
-    >
+    <Badge variant={variants[status] || "outline"}>
       {labels[status] || status}
-    </span>
+    </Badge>
   )
 }
 

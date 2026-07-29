@@ -1,6 +1,9 @@
 "use client"
 
 import React from "react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ServerStatus {
   running: boolean
@@ -88,69 +91,64 @@ export default function OpenCodeEmbedPage() {
   const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false
 
   return (
-    <main className="flex h-screen flex-col">
+    <main className="flex h-[calc(100vh-57px)] flex-col">
       <div className="flex items-center justify-between border-b px-6 py-3">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold">OpenCode Web UI</h1>
           {status && (
-            <span
-              className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${status.running ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
-            >
+            <Badge variant={status.running ? "default" : "secondary"}>
               {status.running ? `接続中 (port ${status.port})` : "停止中"}
-            </span>
+            </Badge>
           )}
           {status?.opencodeAvailable === false && (
-            <span className="inline-block rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-              opencode CLI 未検出
-            </span>
+            <Badge variant="destructive">opencode CLI 未検出</Badge>
           )}
           {status?.running && !iframeLoaded && (
-            <span className="text-xs text-yellow-600">読み込み中...</span>
+            <span className="text-sm text-muted-foreground">読み込み中...</span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={fetchStatus}
-            className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
+          <Button variant="outline" size="sm" onClick={fetchStatus}>
             更新
-          </button>
+          </Button>
           {!status?.running ? (
-            <button
+            <Button
+              size="sm"
               onClick={handleStart}
               disabled={!canStart}
-              className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+              className="bg-green-600 hover:bg-green-700"
             >
               {actionLoading ? "起動中..." : "サーバー起動"}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              size="sm"
+              variant="destructive"
               onClick={handleStop}
               disabled={actionLoading}
-              className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50"
             >
               {actionLoading ? "停止中..." : "サーバー停止"}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="border-b bg-red-50 px-6 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <Alert variant="destructive" className="mx-6 mt-3">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="relative flex-1 bg-gray-100">
+      <div className="relative flex-1 bg-muted">
         {status?.running ? (
           <>
             {!iframeLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="mb-2 text-lg text-gray-500">
+                  <div className="mb-2 text-lg text-muted-foreground">
                     OpenCode Web UI を読み込み中...
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     {status.url}
                   </div>
                 </div>
@@ -168,27 +166,27 @@ export default function OpenCodeEmbedPage() {
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <div className="mb-4 text-6xl">&#9881;</div>
-              <p className="mb-2 text-lg text-gray-600">
+              <p className="mb-2 text-lg text-muted-foreground">
                 OpenCode サーバーは停止しています
               </p>
               {status?.opencodeAvailable === false ? (
-                <p className="mb-6 text-sm text-red-500">
+                <p className="mb-6 text-sm text-destructive">
                   opencode CLI が見つかりません。
                   <br />
                   サーバー環境に opencode がインストールされているか確認してください。
                 </p>
               ) : (
-                <p className="mb-6 text-sm text-gray-400">
+                <p className="mb-6 text-sm text-muted-foreground">
                   「サーバー起動」ボタンで opencode serve を開始します
                 </p>
               )}
-              <button
+              <Button
                 onClick={handleStart}
                 disabled={!canStart}
-                className="rounded bg-green-600 px-6 py-2 text-white hover:bg-green-700 disabled:opacity-50"
+                className="bg-green-600 hover:bg-green-700"
               >
                 {actionLoading ? "起動中..." : "サーバー起動"}
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -11,6 +11,14 @@ export const metadata: Metadata = {
   description: "OpenCode ヘッドレスサーバー管理",
 }
 
+const navItems = [
+  { href: "/", label: "ダッシュボード" },
+  { href: "/opencode", label: "Web UI" },
+  { href: "/sessions", label: "セッション" },
+  { href: "/sessions/new", label: "新規セッション" },
+  { href: "/settings", label: "設定" },
+]
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,9 +27,12 @@ export default function RootLayout({
   return (
     <html lang="ja" className={cn("font-sans", geist.variable)}>
       <body>
-        <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-3">
-          <div className="flex items-center gap-6 max-w-6xl mx-auto">
-            <Link href="/" className="font-bold text-lg flex items-center gap-2">
+        <div className="flex min-h-screen">
+          <aside className="w-56 border-r bg-background flex flex-col shrink-0">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-5 py-4 border-b font-bold text-lg"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -39,25 +50,24 @@ export default function RootLayout({
               </svg>
               OpenCode Server
             </Link>
-            <div className="flex items-center gap-1 ml-auto">
-              <NavLink href="/opencode" label="Web UI" />
-              <NavLink href="/sessions" label="セッション" />
-              <NavLink href="/sessions/new" label="新規" />
-              <NavLink href="/settings" label="設定" />
-            </div>
-          </div>
-        </nav>
-        {children}
+            <nav className="flex flex-col gap-1 p-3">
+              {navItems.map((item) => (
+                <SideNavLink key={item.href} href={item.href} label={item.label} />
+              ))}
+            </nav>
+          </aside>
+          <main className="flex-1 p-6">{children}</main>
+        </div>
       </body>
     </html>
   )
 }
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function SideNavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-accent"
+      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
     >
       {label}
     </Link>

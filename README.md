@@ -17,7 +17,7 @@ GitHub Webhook との連携により、リポジトリへの push イベント�
 | スタイリング | Tailwind CSS 4 |
 | データベース | SQLite (better-sqlite3) |
 | プロセス管理 | child_process (opencode CLI) |
-| デプロイ | Vercel |
+| デプロイ | Vercel / Docker (VPS) |
 
 ## 機能
 
@@ -35,7 +35,7 @@ GitHub Webhook との連携により、リポジトリへの push イベント�
 - Node.js 18+
 - npm
 
-### セットアップ
+### ローカルセットアップ
 
 ```bash
 # 依存パッケージのインストール
@@ -51,6 +51,20 @@ npm run dev
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
+### Docker / VPS デプロイ
+
+Docker を使えば VPS にフル機能（セッション管理・Web UI 含む）でデプロイできます。
+
+```bash
+# Docker イメージのビルド・起動
+docker compose up -d
+
+# VPS へのデプロイ（SSH 接続が必要）
+./deploy.sh user@your-vps-host
+```
+
+詳細は [デプロイガイド](docs/deployment.md) を参照。
+
 ### デフォルト認証情報
 
 | 項目 | 値 |
@@ -63,7 +77,7 @@ npm run dev
 - [アーキテクチャ](docs/architecture.md) — システム構成・コンポーネント設計
 - [機能詳細](docs/features.md) — 各機能の詳細な説明
 - [API リファレンス](docs/api.md) — REST API のエンドポイント一覧
-- [デプロイガイド](docs/deployment.md) — Vercel へのデプロイ手順と制限事項
+- [デプロイガイド](docs/deployment.md) — Vercel / Docker (VPS) へのデプロイ手順
 - [開発ガイド](docs/development.md) — 開発環境の構築・テスト・Lint
 
 ## ライセンス

@@ -66,6 +66,18 @@
 Basic Auth 方式。Cookie に `auth_token`（Base64 エンコードされた `username:password`）を保存。
 
 - `httpOnly` — XSS 対策
-- `secure` — 本番環境では HTTPS のみ
+- `secure` — HTTPS 接続時は自動で有効（`x-forwarded-proto` ヘッダーに基づき判定）
 - `sameSite: lax` — CSRF 対策
 - `maxAge: 86400` — 24時間で有効期限切れ
+
+### リバースプロキシ対応
+
+`x-forwarded-proto` / `x-forwarded-host` ヘッダーに対応しており、Nginx 等のリバースプロキシ配下でも正しい URL へリダイレクトします。VPS + Docker 環境でも HTTPS リダイレクトが正しく動作します。
+
+### ログインページ
+
+ログインページはクライアントサイドでフォーム送信を処理します。
+
+- ローディング表示（送信中はボタンが無効化）
+- エラーメッセージのインライン表示
+- `fetch` API による非同期認証（opaque redirect 対応）

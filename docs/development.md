@@ -123,6 +123,32 @@ npm run lint
 npm run typecheck
 ```
 
+## Docker 開発
+
+### Docker ビルド
+
+```bash
+# ローカルで Docker イメージをビルド
+docker compose build
+
+# 起動
+docker compose up -d
+
+# ログ確認
+docker compose logs -f
+```
+
+### Dockerfile のポイント
+
+- マルチステージビルド（deps → builder → runner）で最終イメージを最小化
+- `node:26.5.0-alpine3.23` をベースイメージとして使用
+- `next.config.ts` で `output: "standalone"` を設定し、standalone モードでビルド
+- `nextjs` ユーザーで実行（root 権限で実行しない）
+
+### package.json の allowScripts
+
+ネイティブモジュール（`better-sqlite3`, `sharp`, `opencode-ai`, `unrs-resolver`）は `allowScripts` で postinstall スクリプトを明示的に許可している。
+
 ## フォーマット
 
 ```bash

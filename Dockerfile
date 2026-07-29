@@ -27,6 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+RUN mkdir -p /home/nextjs && chown nextjs:nodejs /home/nextjs
 
 COPY --from=builder /app/public ./public
 
@@ -48,5 +49,6 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV HOME=/home/nextjs
 
 CMD ["node", "server.js"]

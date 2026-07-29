@@ -105,6 +105,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
+        HOME: process.env.HOME || "/tmp",
         PATH: `${pathResolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
       },
     })
@@ -113,6 +114,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     isRunning = true
 
     let settled = false
+    let stderrOutput = ""
 
     const timeout = setTimeout(async () => {
       if (settled) return
@@ -145,12 +147,15 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       if (!settled) {
         settled = true
         clearTimeout(timeout)
-        reject(new Error(`opencode serve が終了しました (exit code: ${code})`))
+        const detail = stderrOutput.trim()
+          ? ` (stderr: ${stderrOutput.trim()})`
+          : ""
+        reject(new Error(`opencode serve が終了しました (exit code: ${code})${detail}`))
       }
     })
 
-    proc.stderr?.on("data", () => {
-      // consume stderr to prevent backpressure
+    proc.stderr?.on("data", (data) => {
+      stderrOutput += data.toString()
     })
   })
 }

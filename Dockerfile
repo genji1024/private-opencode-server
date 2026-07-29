@@ -30,8 +30,14 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 
+COPY --from=builder /app/node_modules/opencode-ai/bin/opencode.exe /usr/local/bin/opencode
+RUN chmod +x /usr/local/bin/opencode
+
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
+
+RUN mkdir -p /tmp/opencode-server-data
+RUN chown nextjs:nodejs /tmp/opencode-server-data
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

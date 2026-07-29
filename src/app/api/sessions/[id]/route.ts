@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sessionManager } from "@/lib/session-manager"
 import { verifyAuth } from "@/lib/auth"
+import { store } from "@/lib/store"
 
 export async function GET(
   _request: NextRequest,
@@ -10,6 +11,13 @@ export async function GET(
 
   if (!verifyAuth(_request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (!store.isAvailable()) {
+    return NextResponse.json(
+      { error: "Database not available", detail: store.getInitError() },
+      { status: 503 },
+    )
   }
 
   const detail = await sessionManager.get(id)

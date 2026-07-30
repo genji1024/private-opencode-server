@@ -8,6 +8,7 @@ interface ServerStatus {
   url: string
   pid: number | null
   opencodeAvailable: boolean
+  remoteServer: boolean
 }
 
 export default function OpenCodeEmbedPage() {
@@ -85,7 +86,7 @@ export default function OpenCodeEmbedPage() {
     }
   }
 
-  const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false
+  const canStart = !actionLoading && !loading
 
   return (
     <main className="flex h-screen flex-col">
@@ -96,12 +97,9 @@ export default function OpenCodeEmbedPage() {
             <span
               className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${status.running ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
             >
-              {status.running ? `接続中 (port ${status.port})` : "停止中"}
-            </span>
-          )}
-          {status?.opencodeAvailable === false && (
-            <span className="inline-block rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-              opencode CLI 未検出
+              {status.running
+                ? `接続中${status.remoteServer ? "" : ` (port ${status.port})`}`
+                : "停止中"}
             </span>
           )}
           {status?.running && !iframeLoaded && (
@@ -121,16 +119,18 @@ export default function OpenCodeEmbedPage() {
               disabled={!canStart}
               className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50"
             >
-              {actionLoading ? "起動中..." : "サーバー起動"}
+              {actionLoading ? "接続中..." : "サーバー接続"}
             </button>
           ) : (
-            <button
-              onClick={handleStop}
-              disabled={actionLoading}
-              className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              {actionLoading ? "停止中..." : "サーバー停止"}
-            </button>
+            !status?.remoteServer && (
+              <button
+                onClick={handleStop}
+                disabled={actionLoading}
+                className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? "停止中..." : "サーバー停止"}
+              </button>
+            )
           )}
         </div>
       </div>
@@ -171,23 +171,17 @@ export default function OpenCodeEmbedPage() {
               <p className="mb-2 text-lg text-gray-600">
                 OpenCode サーバーは停止しています
               </p>
-              {status?.opencodeAvailable === false ? (
-                <p className="mb-6 text-sm text-red-500">
-                  opencode CLI が見つかりません。
-                  <br />
-                  サーバー環境に opencode がインストールされているか確認してください。
-                </p>
-              ) : (
-                <p className="mb-6 text-sm text-gray-400">
-                  「サーバー起動」ボタンで opencode serve を開始します
-                </p>
-              )}
+              <p className="mb-6 text-sm text-gray-400">
+                {status?.remoteServer
+                  ? "opencode-srv コンテナが起動するのをお待ちください..."
+                  : "「サーバー接続」ボタンで opencode serve を開始します"}
+              </p>
               <button
                 onClick={handleStart}
                 disabled={!canStart}
                 className="rounded bg-green-600 px-6 py-2 text-white hover:bg-green-700 disabled:opacity-50"
               >
-                {actionLoading ? "起動中..." : "サーバー起動"}
+                {actionLoading ? "接続中..." : "サーバー接続"}
               </button>
             </div>
           </div>

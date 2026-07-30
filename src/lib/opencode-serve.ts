@@ -1,66 +1,23 @@
-import { spawn, execSync, ChildProcess } from "child_process"
+import { spawn, ChildProcess } from "child_process"
 import { resolve as pathResolve } from "path"
 import { existsSync } from "fs"
 
 let serverProcess: ChildProcess | null = null
-let serverPort = 4096
 let isRunning = false
 
-function getOpencodeBin(): string {
-  const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
-  if (existsSync(localBin)) {
-    return localBin
-  }
-  return "opencode"
-}
-
-function getPostinstallScript(): string | null {
-  const postinstallPath = pathResolve(
-    process.cwd(),
-    "node_modules",
-    "opencode-ai",
-    "postinstall.mjs",
-  )
-  if (existsSync(postinstallPath)) {
-    return postinstallPath
-  }
-  return null
-}
-
-function runPostinstall(): boolean {
-  const script = getPostinstallScript()
-  if (!script) return false
-  try {
-    execSync(`node "${script}"`, { stdio: "inherit", cwd: process.cwd() })
-    return true
-  } catch {
-    return false
-  }
-}
-
-export function getServePort(): number {
-  return parseInt(process.env.OPENCODE_SERVE_PORT ?? "4096", 10)
-}
-
 export function getServerUrl(): string {
-  serverPort = getServePort()
-  return `http://127.0.0.1:${serverPort}`
+  return process.env.OPENCODE_SERVER_URL ?? "http://127.0.0.1:4096"
 }
 
-export function checkOpencodeAvailable(): boolean {
-  const bin = getOpencodeBin()
+function isRemoteServer(): boolean {
   try {
-    execSync(`"${bin}" --version`, { stdio: "ignore" })
-    return true
+    const parsed = new URL(getServerUrl())
+    return (
+      parsed.hostname !== "127.0.0.1" &&
+      parsed.hostname !== "localhost" &&
+      parsed.hostname !== "0.0.0.0"
+    )
   } catch {
-    if (runPostinstall()) {
-      try {
-        execSync(`"${bin}" --version`, { stdio: "ignore" })
-        return true
-      } catch {
-        return false
-      }
-    }
     return false
   }
 }
@@ -79,25 +36,34 @@ async function isServerReachable(): Promise<boolean> {
 }
 
 export async function startServer(): Promise<{ url: string; port: number }> {
-  const port = getServePort()
+  const url = getServerUrl()
 
-  const reachable = await isServerReachable()
-  if (reachable) {
+  if (await isServerReachable()) {
     isRunning = true
-    return { url: getServerUrl(), port }
+    const parsed = new URL(url)
+    return { url, port: parseInt(parsed.port, 10) || 4096 }
   }
 
-  if (isRunning && serverProcess && !serverProcess.killed) {
-    return { url: getServerUrl(), port }
-  }
-
-  if (!checkOpencodeAvailable()) {
+  if (isRemoteServer()) {
     throw new Error(
-      "opencode CLI が見つかりません。npm install で opencode-ai がインストールされているか確認してください。",
+      "OpenCode サーバーに接続できません。opencode-srv コンテナが起動しているか確認してください。",
     )
   }
 
-  serverPort = port
+  if (isRunning && serverProcess && !serverProcess.killed) {
+    return { url, port: parseInt(new URL(url).port, 10) || 4096 }
+  }
+
+  const port = parseInt(new URL(url).port, 10) || 4096
+
+  function getOpencodeBin(): string {
+    const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
+    if (existsSync(localBin)) {
+      return localBin
+    }
+    return "opencode"
+  }
+
   const bin = getOpencodeBin()
 
   return new Promise((resolvePromise, reject) => {
@@ -105,7 +71,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
-        PATH: `${pathResolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
+        HOME: process.env.HOME || "/tmp",
       },
     })
 
@@ -113,13 +79,13 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     isRunning = true
 
     let settled = false
+    let stderrOutput = ""
 
     const timeout = setTimeout(async () => {
       if (settled) return
-      const reachable = await isServerReachable()
-      if (reachable) {
+      if (await isServerReachable()) {
         settled = true
-        resolvePromise({ url: getServerUrl(), port })
+        resolvePromise({ url, port })
       } else {
         settled = true
         isRunning = false
@@ -134,9 +100,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       isRunning = false
       serverProcess = null
       clearTimeout(timeout)
-      reject(
-        new Error(`opencode serve の起動に失敗しました: ${err.message}`),
-      )
+      reject(new Error(`opencode serve の起動に失敗しました: ${err.message}`))
     })
 
     proc.on("close", (code) => {
@@ -145,30 +109,34 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       if (!settled) {
         settled = true
         clearTimeout(timeout)
-        reject(new Error(`opencode serve が終了しました (exit code: ${code})`))
+        const detail = stderrOutput.trim()
+          ? ` (stderr: ${stderrOutput.trim()})`
+          : ""
+        reject(new Error(`opencode serve が終了しました (exit code: ${code})${detail}`))
       }
     })
 
-    proc.stderr?.on("data", () => {
-      // consume stderr to prevent backpressure
+    proc.stderr?.on("data", (data) => {
+      stderrOutput += data.toString()
     })
   })
 }
 
 export function stopServer(): boolean {
+  if (isRemoteServer()) {
+    return false
+  }
   if (!serverProcess || !isRunning) return false
 
   try {
     serverProcess.kill("SIGTERM")
   } catch {
-    // process may already be dead
   }
 
   setTimeout(() => {
     try {
       serverProcess?.kill("SIGKILL")
     } catch {
-      // ignore
     }
   }, 5000)
 
@@ -178,17 +146,19 @@ export function stopServer(): boolean {
 }
 
 export async function isServerRunning(): Promise<boolean> {
-  if (isRunning && serverProcess && !serverProcess.killed) return true
-  return isServerReachable()
+  if (await isServerReachable()) return true
+  return isRunning && serverProcess !== null && !serverProcess.killed
 }
 
 export async function getServerStatus() {
   const reachable = await isServerReachable()
+  const running = reachable || (isRunning && serverProcess !== null && !serverProcess.killed)
   return {
-    running: reachable || (isRunning && serverProcess !== null && !serverProcess.killed),
-    port: getServePort(),
+    running,
+    port: parseInt(new URL(getServerUrl()).port, 10) || 4096,
     url: getServerUrl(),
-    pid: serverProcess?.pid ?? null,
-    opencodeAvailable: checkOpencodeAvailable(),
+    pid: !isRemoteServer() ? serverProcess?.pid ?? null : null,
+    opencodeAvailable: reachable || true,
+    remoteServer: isRemoteServer(),
   }
 }

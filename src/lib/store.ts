@@ -1,15 +1,15 @@
-import Database from "better-sqlite3"
-import path from "path"
-import fs from "fs"
+import Database from 'better-sqlite3'
+import path from 'path'
+import fs from 'fs'
 
-const DATA_DIR = path.join(process.cwd(), "data")
-const DB_PATH = path.join(DATA_DIR, "opencode-server.db")
+const DATA_DIR = path.join(process.cwd(), 'data')
+const DB_PATH = path.join(DATA_DIR, 'opencode-server.db')
 
 export interface SessionRow {
   id: string
   repo: string
   event: string
-  status: "running" | "completed" | "failed" | "pending"
+  status: 'running' | 'completed' | 'failed' | 'pending'
   startedAt: string
   finishedAt: string | null
   exitCode: number | null
@@ -21,7 +21,7 @@ export interface LogRow {
   id: string
   sessionId: string
   timestamp: string
-  stream: "stdout" | "stderr"
+  stream: 'stdout' | 'stderr'
   text: string
 }
 
@@ -39,7 +39,7 @@ class Store {
       fs.mkdirSync(DATA_DIR, { recursive: true })
     }
     this.db = new Database(DB_PATH)
-    this.db.pragma("journal_mode = WAL")
+    this.db.pragma('journal_mode = WAL')
     this.migrate()
   }
 
@@ -85,39 +85,44 @@ class Store {
   }
 
   getSession(id: string): SessionRow | undefined {
-    const stmt = this.db.prepare("SELECT * FROM sessions WHERE id = ?")
+    const stmt = this.db.prepare('SELECT * FROM sessions WHERE id = ?')
     return stmt.get(id) as SessionRow | undefined
   }
 
   listSessions(): SessionRow[] {
-    const stmt = this.db.prepare("SELECT * FROM sessions ORDER BY startedAt DESC")
+    const stmt = this.db.prepare('SELECT * FROM sessions ORDER BY startedAt DESC')
     return stmt.all() as SessionRow[]
   }
 
   updateSessionStatus(
     id: string,
-    status: SessionRow["status"],
-    extras?: { finishedAt?: string; exitCode?: number | null; error?: string | null; pid?: number | null },
+    status: SessionRow['status'],
+    extras?: {
+      finishedAt?: string
+      exitCode?: number | null
+      error?: string | null
+      pid?: number | null
+    },
   ): void {
-    const sets: string[] = ["status = @status"]
+    const sets: string[] = ['status = @status']
     const params: Record<string, unknown> = { id, status }
     if (extras?.finishedAt !== undefined) {
-      sets.push("finishedAt = @finishedAt")
+      sets.push('finishedAt = @finishedAt')
       params.finishedAt = extras.finishedAt
     }
     if (extras?.exitCode !== undefined) {
-      sets.push("exitCode = @exitCode")
+      sets.push('exitCode = @exitCode')
       params.exitCode = extras.exitCode
     }
     if (extras?.error !== undefined) {
-      sets.push("error = @error")
+      sets.push('error = @error')
       params.error = extras.error
     }
     if (extras?.pid !== undefined) {
-      sets.push("pid = @pid")
+      sets.push('pid = @pid')
       params.pid = extras.pid
     }
-    this.db.prepare(`UPDATE sessions SET ${sets.join(", ")} WHERE id = @id`).run(params)
+    this.db.prepare(`UPDATE sessions SET ${sets.join(', ')} WHERE id = @id`).run(params)
   }
 
   insertLog(log: LogRow): void {
@@ -129,14 +134,12 @@ class Store {
   }
 
   getLogs(sessionId: string): LogRow[] {
-    const stmt = this.db.prepare(
-      "SELECT * FROM logs WHERE sessionId = ? ORDER BY timestamp ASC",
-    )
+    const stmt = this.db.prepare('SELECT * FROM logs WHERE sessionId = ? ORDER BY timestamp ASC')
     return stmt.all(sessionId) as LogRow[]
   }
 
   getConfig(key: string): string | undefined {
-    const stmt = this.db.prepare("SELECT value FROM configs WHERE key = ?")
+    const stmt = this.db.prepare('SELECT value FROM configs WHERE key = ?')
     const row = stmt.get(key) as { value: string } | undefined
     return row?.value
   }
@@ -151,11 +154,11 @@ class Store {
   }
 
   deleteConfig(key: string): void {
-    this.db.prepare("DELETE FROM configs WHERE key = ?").run(key)
+    this.db.prepare('DELETE FROM configs WHERE key = ?').run(key)
   }
 
   listConfigs(): ConfigRow[] {
-    const stmt = this.db.prepare("SELECT * FROM configs ORDER BY key")
+    const stmt = this.db.prepare('SELECT * FROM configs ORDER BY key')
     return stmt.all() as ConfigRow[]
   }
 

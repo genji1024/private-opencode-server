@@ -1,20 +1,20 @@
-"use client"
+'use client'
 
-import React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import React from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function NewSessionPage() {
   const router = useRouter()
 
-  const [repo, setRepo] = React.useState("genji1024/private-note")
-  const [instruction, setInstruction] = React.useState("")
+  const [repo, setRepo] = React.useState('genji1024/private-note')
+  const [instruction, setInstruction] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -26,21 +26,21 @@ export default function NewSessionPage() {
     try {
       setSubmitting(true)
       setError(null)
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ repo, instruction }),
       })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to create session")
+        throw new Error(data.error || 'Failed to create session')
       }
 
       const session = await res.json()
       router.push(`/sessions/${session.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create session")
+      setError(err instanceof Error ? err.message : 'Failed to create session')
     } finally {
       setSubmitting(false)
     }
@@ -49,7 +49,10 @@ export default function NewSessionPage() {
   return (
     <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <Link href="/sessions" className={buttonVariants({ variant: "link", className: "mb-4 -ml-2" })}>
+        <Link
+          href="/sessions"
+          className={buttonVariants({ variant: 'link', className: 'mb-4 -ml-2' })}
+        >
           ← 一覧に戻る
         </Link>
 
@@ -93,9 +96,9 @@ export default function NewSessionPage() {
 
               <div className="flex gap-3">
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? "作成中..." : "作成"}
+                  {submitting ? '作成中...' : '作成'}
                 </Button>
-                <Link href="/sessions" className={buttonVariants({ variant: "outline" })}>
+                <Link href="/sessions" className={buttonVariants({ variant: 'outline' })}>
                   キャンセル
                 </Link>
               </div>

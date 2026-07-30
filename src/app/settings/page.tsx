@@ -1,19 +1,20 @@
-"use client"
+'use client'
 
-import React from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import React from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const CONFIG_KEYS = {
-  githubToken: "github_token",
-  watchedRepos: "watched_repos",
-  opencodeModel: "opencode_model",
-  opencodeTimeout: "opencode_timeout",
-  opencodeExtraArgs: "opencode_extra_args",
+  githubToken: 'github_token',
+  watchedRepos: 'watched_repos',
+  opencodeModel: 'opencode_model',
+  opencodeTimeout: 'opencode_timeout',
+  opencodeExtraArgs: 'opencode_extra_args',
 } as const
 
 interface Configs {
@@ -24,23 +25,27 @@ interface Configs {
   [CONFIG_KEYS.opencodeExtraArgs]: string
 }
 
-type Message = { type: "success" | "error" | "info" | "default"; text: string } | null
+type Message = { type: 'success' | 'error' | 'info' | 'default'; text: string } | null
 
 export default function SettingsPage() {
   const [configs, setConfigs] = React.useState<Configs>({
-    [CONFIG_KEYS.githubToken]: "",
+    [CONFIG_KEYS.githubToken]: '',
     [CONFIG_KEYS.watchedRepos]: [],
-    [CONFIG_KEYS.opencodeModel]: "",
-    [CONFIG_KEYS.opencodeTimeout]: "300",
-    [CONFIG_KEYS.opencodeExtraArgs]: "",
+    [CONFIG_KEYS.opencodeModel]: '',
+    [CONFIG_KEYS.opencodeTimeout]: '300',
+    [CONFIG_KEYS.opencodeExtraArgs]: '',
   })
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
   const [message, setMessage] = React.useState<Message>(null)
   const [showToken, setShowToken] = React.useState(false)
   const [testingToken, setTestingToken] = React.useState(false)
-  const [tokenTestResult, setTokenTestResult] = React.useState<{ success: boolean; login?: string; error?: string } | null>(null)
-  const [newRepo, setNewRepo] = React.useState("")
+  const [tokenTestResult, setTokenTestResult] = React.useState<{
+    success: boolean
+    login?: string
+    error?: string
+  } | null>(null)
+  const [newRepo, setNewRepo] = React.useState('')
 
   React.useEffect(() => {
     fetchConfigs()
@@ -49,22 +54,22 @@ export default function SettingsPage() {
   async function fetchConfigs() {
     try {
       setLoading(true)
-      const res = await fetch("/api/config")
-      if (!res.ok) throw new Error("Failed to fetch configs")
-      const data = await res.json() as { key: string; value: string }[]
+      const res = await fetch('/api/config')
+      if (!res.ok) throw new Error('Failed to fetch configs')
+      const data = (await res.json()) as { key: string; value: string }[]
       const configMap: Configs = {
-        [CONFIG_KEYS.githubToken]: "",
+        [CONFIG_KEYS.githubToken]: '',
         [CONFIG_KEYS.watchedRepos]: [],
-        [CONFIG_KEYS.opencodeModel]: "",
-        [CONFIG_KEYS.opencodeTimeout]: "300",
-        [CONFIG_KEYS.opencodeExtraArgs]: "",
+        [CONFIG_KEYS.opencodeModel]: '',
+        [CONFIG_KEYS.opencodeTimeout]: '300',
+        [CONFIG_KEYS.opencodeExtraArgs]: '',
       }
       for (const item of data) {
         if (item.key === CONFIG_KEYS.githubToken) {
           configMap[CONFIG_KEYS.githubToken] = item.value
         } else if (item.key === CONFIG_KEYS.watchedRepos) {
           configMap[CONFIG_KEYS.watchedRepos] = item.value
-            .split("\n")
+            .split('\n')
             .map((s: string) => s.trim())
             .filter(Boolean)
         } else if (item.key === CONFIG_KEYS.opencodeModel) {
@@ -77,7 +82,7 @@ export default function SettingsPage() {
       }
       setConfigs(configMap)
     } catch (err) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to load" })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load' })
     } finally {
       setLoading(false)
     }
@@ -85,8 +90,8 @@ export default function SettingsPage() {
 
   async function saveConfig(key: string, value: string) {
     const res = await fetch(`/api/config/${encodeURIComponent(key)}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ value }),
     })
     if (!res.ok) throw new Error(`Failed to save ${key}`)
@@ -99,14 +104,14 @@ export default function SettingsPage() {
       setMessage(null)
 
       await saveConfig(CONFIG_KEYS.githubToken, configs[CONFIG_KEYS.githubToken])
-      await saveConfig(CONFIG_KEYS.watchedRepos, configs[CONFIG_KEYS.watchedRepos].join("\n"))
+      await saveConfig(CONFIG_KEYS.watchedRepos, configs[CONFIG_KEYS.watchedRepos].join('\n'))
       await saveConfig(CONFIG_KEYS.opencodeModel, configs[CONFIG_KEYS.opencodeModel])
       await saveConfig(CONFIG_KEYS.opencodeTimeout, configs[CONFIG_KEYS.opencodeTimeout])
       await saveConfig(CONFIG_KEYS.opencodeExtraArgs, configs[CONFIG_KEYS.opencodeExtraArgs])
 
-      setMessage({ type: "success", text: "設定を保存しました" })
+      setMessage({ type: 'success', text: '設定を保存しました' })
     } catch (err) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Save failed" })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Save failed' })
     } finally {
       setSaving(false)
     }
@@ -115,7 +120,7 @@ export default function SettingsPage() {
   async function handleTestToken() {
     const token = configs[CONFIG_KEYS.githubToken]
     if (!token) {
-      setTokenTestResult({ success: false, error: "トークンが入力されていません" })
+      setTokenTestResult({ success: false, error: 'トークンが入力されていません' })
       return
     }
 
@@ -123,15 +128,18 @@ export default function SettingsPage() {
       setTestingToken(true)
       setTokenTestResult(null)
 
-      const res = await fetch("/api/settings/test-github-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/settings/test-github-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       })
       const data = await res.json()
       setTokenTestResult(data)
     } catch (err) {
-      setTokenTestResult({ success: false, error: err instanceof Error ? err.message : "Test failed" })
+      setTokenTestResult({
+        success: false,
+        error: err instanceof Error ? err.message : 'Test failed',
+      })
     } finally {
       setTestingToken(false)
     }
@@ -141,18 +149,18 @@ export default function SettingsPage() {
     const repo = newRepo.trim()
     if (!repo) return
     if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repo)) {
-      setMessage({ type: "error", text: "リポジトリ名は「owner/repo」形式で入力してください" })
+      setMessage({ type: 'error', text: 'リポジトリ名は「owner/repo」形式で入力してください' })
       return
     }
     if (configs[CONFIG_KEYS.watchedRepos].includes(repo)) {
-      setMessage({ type: "info", text: "このリポジトリは既に追加されています" })
+      setMessage({ type: 'info', text: 'このリポジトリは既に追加されています' })
       return
     }
     setConfigs((prev) => ({
       ...prev,
       [CONFIG_KEYS.watchedRepos]: [...prev[CONFIG_KEYS.watchedRepos], repo],
     }))
-    setNewRepo("")
+    setNewRepo('')
     setMessage(null)
   }
 
@@ -166,7 +174,31 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <main className="min-h-screen p-6 md:p-8">
-        <div className="max-w-2xl mx-auto text-muted-foreground">読み込み中...</div>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <Skeleton className="h-8 w-24 mb-2" />
+          <Skeleton className="h-4 w-48 mb-8" />
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-64" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </main>
     )
   }
@@ -193,10 +225,13 @@ export default function SettingsPage() {
                   <div className="relative flex-1">
                     <Input
                       id="githubToken"
-                      type={showToken ? "text" : "password"}
+                      type={showToken ? 'text' : 'password'}
                       value={configs[CONFIG_KEYS.githubToken]}
                       onChange={(e) => {
-                        setConfigs((prev) => ({ ...prev, [CONFIG_KEYS.githubToken]: e.target.value }))
+                        setConfigs((prev) => ({
+                          ...prev,
+                          [CONFIG_KEYS.githubToken]: e.target.value,
+                        }))
                         setTokenTestResult(null)
                       }}
                       placeholder="github_pat_..."
@@ -209,7 +244,7 @@ export default function SettingsPage() {
                       onClick={() => setShowToken(!showToken)}
                       className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-xs"
                     >
-                      {showToken ? "隠す" : "表示"}
+                      {showToken ? '隠す' : '表示'}
                     </Button>
                   </div>
                   <Button
@@ -218,7 +253,7 @@ export default function SettingsPage() {
                     onClick={handleTestToken}
                     disabled={testingToken || !configs[CONFIG_KEYS.githubToken]}
                   >
-                    {testingToken ? "テスト中..." : "接続テスト"}
+                    {testingToken ? 'テスト中...' : '接続テスト'}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -226,7 +261,7 @@ export default function SettingsPage() {
                 </p>
 
                 {tokenTestResult && (
-                  <Alert variant={tokenTestResult.success ? "default" : "destructive"}>
+                  <Alert variant={tokenTestResult.success ? 'default' : 'destructive'}>
                     <AlertDescription>
                       {tokenTestResult.success ? (
                         <>
@@ -252,7 +287,12 @@ export default function SettingsPage() {
                   type="text"
                   value={newRepo}
                   onChange={(e) => setNewRepo(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addRepo() } }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addRepo()
+                    }
+                  }}
                   placeholder="owner/repo"
                   className="font-mono"
                 />
@@ -262,7 +302,9 @@ export default function SettingsPage() {
               </div>
 
               {configs[CONFIG_KEYS.watchedRepos].length === 0 ? (
-                <p className="text-sm text-muted-foreground">監視対象リポジトリが設定されていません</p>
+                <p className="text-sm text-muted-foreground">
+                  監視対象リポジトリが設定されていません
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {configs[CONFIG_KEYS.watchedRepos].map((repo) => (
@@ -322,7 +364,10 @@ export default function SettingsPage() {
                   type="number"
                   value={configs[CONFIG_KEYS.opencodeTimeout]}
                   onChange={(e) =>
-                    setConfigs((prev) => ({ ...prev, [CONFIG_KEYS.opencodeTimeout]: e.target.value }))
+                    setConfigs((prev) => ({
+                      ...prev,
+                      [CONFIG_KEYS.opencodeTimeout]: e.target.value,
+                    }))
                   }
                   min="30"
                   max="3600"
@@ -340,7 +385,10 @@ export default function SettingsPage() {
                   type="text"
                   value={configs[CONFIG_KEYS.opencodeExtraArgs]}
                   onChange={(e) =>
-                    setConfigs((prev) => ({ ...prev, [CONFIG_KEYS.opencodeExtraArgs]: e.target.value }))
+                    setConfigs((prev) => ({
+                      ...prev,
+                      [CONFIG_KEYS.opencodeExtraArgs]: e.target.value,
+                    }))
                   }
                   placeholder="--verbose --temperature 0.7"
                   className="font-mono"
@@ -353,14 +401,22 @@ export default function SettingsPage() {
           </Card>
 
           {message && (
-            <Alert variant={message.type === "success" ? "default" : message.type === "error" ? "destructive" : "default"}>
+            <Alert
+              variant={
+                message.type === 'success'
+                  ? 'default'
+                  : message.type === 'error'
+                    ? 'destructive'
+                    : 'default'
+              }
+            >
               <AlertDescription>{message.text}</AlertDescription>
             </Alert>
           )}
 
           <div className="flex gap-3">
             <Button type="submit" disabled={saving}>
-              {saving ? "保存中..." : "全て保存"}
+              {saving ? '保存中...' : '全て保存'}
             </Button>
             <Button
               type="button"

@@ -10,14 +10,14 @@ GitHub Webhook との連携により、リポジトリへの push イベント�
 
 ## 技術スタック
 
-| レイヤ | 技術 |
-|--------|------|
-| フレームワーク | Next.js 15 (App Router) |
-| 言語 | TypeScript |
-| スタイリング | Tailwind CSS 4 |
-| データベース | SQLite (better-sqlite3) |
-| プロセス管理 | child_process (opencode CLI) |
-| デプロイ | Docker (VPS) |
+| レイヤ         | 技術                         |
+| -------------- | ---------------------------- |
+| フレームワーク | Next.js 15 (App Router)      |
+| 言語           | TypeScript                   |
+| スタイリング   | Tailwind CSS 4               |
+| データベース   | SQLite (better-sqlite3)      |
+| プロセス管理   | child_process (opencode CLI) |
+| デプロイ       | Docker (VPS)                 |
 
 ## 機能
 
@@ -67,9 +67,9 @@ docker compose up -d
 
 ### デフォルト認証情報
 
-| 項目 | 値 |
-|------|------|
-| ユーザー名 | `admin` |
+| 項目       | 値                                            |
+| ---------- | --------------------------------------------- |
+| ユーザー名 | `admin`                                       |
 | パスワード | `.env.local` の `ADMIN_PASSWORD` に設定した値 |
 
 ## ドキュメント

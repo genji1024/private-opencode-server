@@ -1,19 +1,27 @@
-"use client"
+'use client'
 
-import React from "react"
-import Link from "next/link"
-import { SessionRow, LogRow } from "@/lib/store"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import React from 'react'
+import Link from 'next/link'
+import { SessionRow, LogRow } from '@/lib/store'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
 
-export default function SessionDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return <SessionDetail params={params} />
 }
 
@@ -28,21 +36,22 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   const [logs, setLogs] = React.useState<LogRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
-  const [message, setMessage] = React.useState("")
+  const [message, setMessage] = React.useState('')
   const [sending, setSending] = React.useState(false)
   const [sendError, setSendError] = React.useState<string | null>(null)
+  const [showCancelDialog, setShowCancelDialog] = React.useState(false)
 
   const fetchSession = React.useCallback(async () => {
     if (!resolvedId) return
     try {
       setLoading(true)
       const res = await fetch(`/api/sessions/${resolvedId}`)
-      if (!res.ok) throw new Error("Session not found")
+      if (!res.ok) throw new Error('Session not found')
       const data = await res.json()
       setSession(data.session)
       setLogs(data.logs)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -65,7 +74,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
       } catch {}
     }
 
-    eventSource.addEventListener("done", (event) => {
+    eventSource.addEventListener('done', (event) => {
       try {
         const updated = JSON.parse(event.data) as SessionRow
         setSession(updated)
@@ -90,38 +99,59 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
       setSending(true)
       setSendError(null)
       const res = await fetch(`/api/sessions/${resolvedId}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to send message")
+        throw new Error(data.error || 'Failed to send message')
       }
-      setMessage("")
+      setMessage('')
     } catch (err) {
-      setSendError(err instanceof Error ? err.message : "Failed to send")
+      setSendError(err instanceof Error ? err.message : 'Failed to send')
     } finally {
       setSending(false)
     }
   }
 
-  async function handleCancel() {
+  async function handleCancelConfirm() {
     if (!resolvedId) return
-    if (!confirm("このセッションをキャンセルしますか？")) return
     try {
-      const res = await fetch(`/api/sessions/${resolvedId}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to cancel session")
+      const res = await fetch(`/api/sessions/${resolvedId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to cancel session')
+      toast.success('セッションをキャンセルしました')
+      setShowCancelDialog(false)
       fetchSession()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Cancel failed")
+      toast.error(err instanceof Error ? err.message : 'キャンセルに失敗しました')
+      setShowCancelDialog(false)
     }
   }
 
   if (loading) {
     return (
       <main className="min-h-screen p-6 md:p-8">
-        <div className="max-w-4xl mx-auto text-muted-foreground">読み込み中...</div>
+        <div className="max-w-4xl mx-auto space-y-4">
+          <Skeleton className="h-4 w-24" />
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-40" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <Skeleton className="h-5 w-16 mb-4" />
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </main>
     )
   }
@@ -131,11 +161,9 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
       <main className="min-h-screen p-6 md:p-8">
         <div className="max-w-4xl mx-auto">
           <Alert variant="destructive">
-            <AlertDescription>
-              {error || "セッションが見つかりません"}
-            </AlertDescription>
+            <AlertDescription>{error || 'セッションが見つかりません'}</AlertDescription>
           </Alert>
-          <Link href="/sessions" className={buttonVariants({ variant: "link", className: "mt-4" })}>
+          <Link href="/sessions" className={buttonVariants({ variant: 'link', className: 'mt-4' })}>
             ← 一覧に戻る
           </Link>
         </div>
@@ -144,23 +172,26 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const statusLabels: Record<string, string> = {
-    running: "実行中",
-    completed: "完了",
-    failed: "失敗",
-    pending: "待機中",
+    running: '実行中',
+    completed: '完了',
+    failed: '失敗',
+    pending: '待機中',
   }
 
-  const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    running: "default",
-    completed: "secondary",
-    failed: "destructive",
-    pending: "outline",
+  const statusVariants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+    running: 'default',
+    completed: 'secondary',
+    failed: 'destructive',
+    pending: 'outline',
   }
 
   return (
     <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/sessions" className={buttonVariants({ variant: "link", className: "mb-4 -ml-2" })}>
+        <Link
+          href="/sessions"
+          className={buttonVariants({ variant: 'link', className: 'mb-4 -ml-2' })}
+        >
           ← 一覧に戻る
         </Link>
 
@@ -170,12 +201,8 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
               <div>
                 <CardTitle>セッション詳細</CardTitle>
               </div>
-              {session.status === "running" && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleCancel}
-                >
+              {session.status === 'running' && (
+                <Button variant="destructive" size="sm" onClick={() => setShowCancelDialog(true)}>
                   キャンセル
                 </Button>
               )}
@@ -187,7 +214,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
               <DetailRow
                 label="ステータス"
                 value={
-                  <Badge variant={statusVariants[session.status] || "outline"}>
+                  <Badge variant={statusVariants[session.status] || 'outline'}>
                     {statusLabels[session.status] || session.status}
                   </Badge>
                 }
@@ -227,27 +254,22 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
                 <div className="text-muted-foreground">ログはまだありません</div>
               ) : (
                 logs.map((log) => (
-                  <div
-                    key={log.id}
-                    className={log.stream === "stderr" ? "text-destructive" : ""}
-                  >
+                  <div key={log.id} className={log.stream === 'stderr' ? 'text-destructive' : ''}>
                     <span className="text-muted-foreground mr-2">
-                      {new Date(log.timestamp).toLocaleTimeString("ja-JP")}
+                      {new Date(log.timestamp).toLocaleTimeString('ja-JP')}
                     </span>
                     {log.text}
                   </div>
                 ))
               )}
-              {session.status === "running" && (
-                <div className="text-muted-foreground animate-pulse mt-2">
-                  ログを受信中...
-                </div>
+              {session.status === 'running' && (
+                <div className="text-muted-foreground animate-pulse mt-2">ログを受信中...</div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {session.status === "running" && (
+        {session.status === 'running' && (
           <Card>
             <CardHeader>
               <CardTitle>メッセージを送信</CardTitle>
@@ -266,18 +288,32 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
                   </Alert>
                 )}
                 <Button type="submit" disabled={sending || !message.trim()}>
-                  {sending ? "送信中..." : "送信"}
+                  {sending ? '送信中...' : '送信'}
                 </Button>
               </form>
             </CardContent>
           </Card>
         )}
       </div>
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>セッションをキャンセル</AlertDialogTitle>
+            <AlertDialogDescription>
+              このセッションをキャンセルしますか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelConfirm}>確認</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 
   function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString("ja-JP")
+    return new Date(iso).toLocaleString('ja-JP')
   }
 }
 
@@ -293,7 +329,7 @@ function DetailRow({
   return (
     <div>
       <span className="text-muted-foreground">{label}: </span>
-      <span className={mono ? "font-mono" : ""}>{value}</span>
+      <span className={mono ? 'font-mono' : ''}>{value}</span>
     </div>
   )
 }

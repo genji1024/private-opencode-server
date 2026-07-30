@@ -1,11 +1,12 @@
-"use client"
+'use client'
 
-import { useRouter } from "next/navigation"
-import { useState, FormEvent } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useRouter } from 'next/navigation'
+import { useState, FormEvent } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Pencil } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,13 +20,13 @@ export default function LoginPage() {
 
     const formData = new FormData(e.currentTarget)
     try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
+      const res = await fetch('/api/auth', {
+        method: 'POST',
         body: formData,
-        redirect: "manual",
+        redirect: 'manual',
       })
-      if (res.status === 0 || res.type === "opaqueredirect" || res.ok) {
-        window.location.href = "/"
+      if (res.status === 0 || res.type === 'opaqueredirect' || res.ok) {
+        window.location.href = '/'
         return
       }
       setError(true)
@@ -41,22 +42,9 @@ export default function LoginPage() {
       <div className="mb-8 text-center">
         <div
           className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4"
-          style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+          style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 20h9" />
-            <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z" />
-          </svg>
+          <Pencil size={24} />
         </div>
         <h1 className="text-xl font-bold tracking-tight">OpenCode Server</h1>
         <p className="mt-1 text-sm text-muted-foreground">管理画面にアクセス</p>
@@ -69,22 +57,11 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">ユーザー名</Label>
-              <Input
-                id="username"
-                name="username"
-                type="text"
-                placeholder="admin"
-                required
-              />
+              <Input id="username" name="username" type="text" placeholder="admin" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">パスワード</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-              />
+              <Input id="password" name="password" type="password" required />
             </div>
             {error && (
               <p className="text-sm text-destructive text-center">
@@ -92,7 +69,7 @@ export default function LoginPage() {
               </p>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "ログイン中..." : "ログイン"}
+              {loading ? 'ログイン中...' : 'ログイン'}
             </Button>
           </form>
         </CardContent>

@@ -1,11 +1,9 @@
 #!/bin/sh
 set -e
 
-# Create necessary directories for opencode
 mkdir -p /home/nextjs/.local/share/opencode
 mkdir -p /home/nextjs/.config/opencode
 
-# Generate auth.json from environment variable if provided
 if [ -n "$OPENCODE_API_KEY" ]; then
   cat > /home/nextjs/.local/share/opencode/auth.json << EOF
 {
@@ -15,20 +13,20 @@ if [ -n "$OPENCODE_API_KEY" ]; then
   }
 }
 EOF
-  chown nextjs:nodejs /home/nextjs/.local/share/opencode/auth.json
   chmod 600 /home/nextjs/.local/share/opencode/auth.json
 fi
 
-# Generate opencode.jsonc from environment variables if provided
 if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ] || [ -n "$STREAMABLE_HTTP_AUTH_TOKEN" ]; then
-  cat > /home/nextjs/.config/opencode/opencode.jsonc << 'EOF'
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-EOF
+  {
+    echo '{'
+    echo '  "$schema": "https://opencode.ai/config.json",'
+    echo '  "mcp": {'
 
-  if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-    cat >> /home/nextjs/.config/opencode/opencode.jsonc << 'EOF'
+    first_mcp=true
+    if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
+      $first_mcp || echo ','
+      first_mcp=false
+      cat << MCP_END
     "github": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp/",
@@ -37,14 +35,13 @@ EOF
       },
       "oauth": false
     }
-EOF
-  fi
-
-  if [ -n "$STREAMABLE_HTTP_AUTH_TOKEN" ]; then
-    if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-      echo "    ," >> /home/nextjs/.config/opencode/opencode.jsonc
+MCP_END
     fi
-    cat >> /home/nextjs/.config/opencode/opencode.jsonc << 'EOF'
+
+    if [ -n "$STREAMABLE_HTTP_AUTH_TOKEN" ]; then
+      $first_mcp || echo ','
+      first_mcp=false
+      cat << MCP_END
     "gitlab": {
       "type": "remote",
       "url": "http://gitlab-mcp:3002/mcp",
@@ -53,18 +50,15 @@ EOF
       },
       "oauth": false
     }
-EOF
-  fi
+MCP_END
+    fi
 
-  cat >> /home/nextjs/.config/opencode/opencode.jsonc << 'EOF'
-  },
-  "permission": {
-    "*": "allow"
-  }
-}
-EOF
-  chown nextjs:nodejs /home/nextjs/.config/opencode/opencode.jsonc
+    echo '  },'
+    echo '  "permission": {'
+    echo '    "*": "allow"'
+    echo '  }'
+    echo '}'
+  } > /home/nextjs/.config/opencode/opencode.jsonc
 fi
 
-# Execute the main command
 exec "$@"

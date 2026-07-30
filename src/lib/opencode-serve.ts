@@ -1,25 +1,25 @@
-import { spawn, execSync, ChildProcess } from "child_process"
-import { resolve as pathResolve } from "path"
-import { existsSync } from "fs"
+import { spawn, execSync, ChildProcess } from 'child_process'
+import { resolve as pathResolve } from 'path'
+import { existsSync } from 'fs'
 
 let serverProcess: ChildProcess | null = null
 let serverPort = 4096
 let isRunning = false
 
 function getOpencodeBin(): string {
-  const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
+  const localBin = pathResolve(process.cwd(), 'node_modules', '.bin', 'opencode')
   if (existsSync(localBin)) {
     return localBin
   }
-  return "opencode"
+  return 'opencode'
 }
 
 function getPostinstallScript(): string | null {
   const postinstallPath = pathResolve(
     process.cwd(),
-    "node_modules",
-    "opencode-ai",
-    "postinstall.mjs",
+    'node_modules',
+    'opencode-ai',
+    'postinstall.mjs',
   )
   if (existsSync(postinstallPath)) {
     return postinstallPath
@@ -31,7 +31,7 @@ function runPostinstall(): boolean {
   const script = getPostinstallScript()
   if (!script) return false
   try {
-    execSync(`node "${script}"`, { stdio: "inherit", cwd: process.cwd() })
+    execSync(`node "${script}"`, { stdio: 'inherit', cwd: process.cwd() })
     return true
   } catch {
     return false
@@ -39,7 +39,7 @@ function runPostinstall(): boolean {
 }
 
 export function getServePort(): number {
-  return parseInt(process.env.OPENCODE_SERVE_PORT ?? "4096", 10)
+  return parseInt(process.env.OPENCODE_SERVE_PORT ?? '4096', 10)
 }
 
 export function getServerUrl(): string {
@@ -50,12 +50,12 @@ export function getServerUrl(): string {
 export function checkOpencodeAvailable(): boolean {
   const bin = getOpencodeBin()
   try {
-    execSync(`"${bin}" --version`, { stdio: "ignore" })
+    execSync(`"${bin}" --version`, { stdio: 'ignore' })
     return true
   } catch {
     if (runPostinstall()) {
       try {
-        execSync(`"${bin}" --version`, { stdio: "ignore" })
+        execSync(`"${bin}" --version`, { stdio: 'ignore' })
         return true
       } catch {
         return false
@@ -93,7 +93,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
   if (!checkOpencodeAvailable()) {
     throw new Error(
-      "opencode CLI が見つかりません。npm install で opencode-ai がインストールされているか確認してください。",
+      'opencode CLI が見つかりません。npm install で opencode-ai がインストールされているか確認してください。',
     )
   }
 
@@ -101,20 +101,24 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   const bin = getOpencodeBin()
 
   return new Promise((resolvePromise, reject) => {
-    const proc = spawn(bin, ["serve", "--port", String(port)], {
-      stdio: ["ignore", "pipe", "pipe"],
+    const proc = spawn(bin, ['serve', '--print-logs', '--port', String(port)], {
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        HOME: process.env.HOME || "/tmp",
-        PATH: `${pathResolve(process.cwd(), "node_modules", ".bin")}:${process.env.PATH}`,
-      },
+        HOME: process.env.HOME || '/tmp',
+        PATH: `${pathResolve(process.cwd(), 'node_modules', '.bin')}:${process.env.PATH}`,
+        XDG_CONFIG_HOME:
+          process.env.XDG_CONFIG_HOME || pathResolve(process.env.HOME || '/tmp', '.config'),
+        XDG_DATA_HOME:
+          process.env.XDG_DATA_HOME || pathResolve(process.env.HOME || '/tmp', '.local', 'share'),
+      } as any,
     })
 
     serverProcess = proc
     isRunning = true
 
     let settled = false
-    let stderrOutput = ""
+    let stderrOutput = ''
 
     const timeout = setTimeout(async () => {
       if (settled) return
@@ -126,35 +130,31 @@ export async function startServer(): Promise<{ url: string; port: number }> {
         settled = true
         isRunning = false
         serverProcess = null
-        reject(new Error("opencode serve が起動しましたが、接続できませんでした。"))
+        reject(new Error('opencode serve が起動しましたが、接続できませんでした。'))
       }
     }, 8000)
 
-    proc.on("error", (err) => {
+    proc.on('error', (err) => {
       if (settled) return
       settled = true
       isRunning = false
       serverProcess = null
       clearTimeout(timeout)
-      reject(
-        new Error(`opencode serve の起動に失敗しました: ${err.message}`),
-      )
+      reject(new Error(`opencode serve の起動に失敗しました: ${err.message}`))
     })
 
-    proc.on("close", (code) => {
+    proc.on('close', (code) => {
       isRunning = false
       serverProcess = null
       if (!settled) {
         settled = true
         clearTimeout(timeout)
-        const detail = stderrOutput.trim()
-          ? ` (stderr: ${stderrOutput.trim()})`
-          : ""
+        const detail = stderrOutput.trim() ? ` (stderr: ${stderrOutput.trim()})` : ''
         reject(new Error(`opencode serve が終了しました (exit code: ${code})${detail}`))
       }
     })
 
-    proc.stderr?.on("data", (data) => {
+    proc.stderr?.on('data', (data) => {
       stderrOutput += data.toString()
     })
   })
@@ -164,14 +164,14 @@ export function stopServer(): boolean {
   if (!serverProcess || !isRunning) return false
 
   try {
-    serverProcess.kill("SIGTERM")
+    serverProcess.kill('SIGTERM')
   } catch {
     // process may already be dead
   }
 
   setTimeout(() => {
     try {
-      serverProcess?.kill("SIGKILL")
+      serverProcess?.kill('SIGKILL')
     } catch {
       // ignore
     }

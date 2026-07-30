@@ -1,20 +1,53 @@
-"use client"
+'use client'
 
-import Link from "next/link"
-import React from "react"
-import { SessionRow } from "@/lib/store"
+import Link from 'next/link'
+import React from 'react'
+import { SessionRow } from '@/lib/store'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Plus, LayoutGrid, ArrowRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 
 export default function SessionsPage() {
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">セッション一覧</h1>
-          <Link
-            href="/sessions/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-          >
-            + 新規セッション
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">セッション一覧</h1>
+            <p className="mt-1 text-sm text-muted-foreground">実行中および過去のセッションを管理</p>
+          </div>
+          <Link href="/sessions/new" className={buttonVariants()}>
+            <Plus className="size-4 mr-1" />
+            新規セッション
           </Link>
         </div>
         <SessionList />
@@ -27,6 +60,19 @@ function SessionList() {
   const [sessions, setSessions] = React.useState<SessionRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [cancelTarget, setCancelTarget] = React.useState<string | null>(null)
+  const [page, setPage] = React.useState(1)
+  const PAGE_SIZE = 20
+
+  const totalPages = React.useMemo(
+    () => Math.max(1, Math.ceil(sessions.length / PAGE_SIZE)),
+    [sessions],
+  )
+
+  const paginatedSessions = React.useMemo(
+    () => sessions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [sessions, page],
+  )
 
   React.useEffect(() => {
     fetchSessions()
@@ -35,125 +81,223 @@ function SessionList() {
   async function fetchSessions() {
     try {
       setLoading(true)
-      const res = await fetch("/api/sessions")
-      if (!res.ok) throw new Error("Failed to fetch sessions")
+      const res = await fetch('/api/sessions')
+      if (!res.ok) throw new Error('Failed to fetch sessions')
       const data = await res.json()
       setSessions(data)
+      setPage(1)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleCancel(id: string) {
-    if (!confirm("このセッションをキャンセルしますか？")) return
+  async function handleCancelConfirm() {
+    if (!cancelTarget) return
     try {
-      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to cancel session")
+      const res = await fetch(`/api/sessions/${cancelTarget}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to cancel session')
+      toast.success('セッションをキャンセルしました')
+      setCancelTarget(null)
       fetchSessions()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Cancel failed")
+      toast.error(err instanceof Error ? err.message : 'キャンセルに失敗しました')
+      setCancelTarget(null)
     }
   }
 
   if (loading) {
-    return <div className="text-gray-500">読み込み中...</div>
+    return (
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[120px]">ID</TableHead>
+                <TableHead>リポジトリ</TableHead>
+                <TableHead className="w-[120px]">ステータス</TableHead>
+                <TableHead className="w-[180px]">開始時刻</TableHead>
+                <TableHead className="w-[150px]">アクション</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (error) {
-    return <div className="text-red-500">エラー: {error}</div>
+    return (
+      <Card className="border-destructive">
+        <CardContent className="py-12 text-center text-destructive">エラー: {error}</CardContent>
+      </Card>
+    )
   }
 
   if (sessions.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg mb-4">セッションがありません</p>
-        <Link
-          href="/sessions/new"
-          className="text-blue-600 hover:underline"
-        >
-          最初のセッションを作成する
-        </Link>
-      </div>
+      <Card>
+        <CardContent className="py-16 text-center">
+          <div className="mb-4 text-4xl text-muted-foreground/30">
+            <LayoutGrid size={48} strokeWidth={1} className="mx-auto" />
+          </div>
+          <p className="text-lg mb-2 text-muted-foreground">セッションがありません</p>
+          <p className="text-sm text-muted-foreground/60 mb-6">
+            最初の opencode セッションを作成しましょう
+          </p>
+          <Link
+            href="/sessions/new"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            セッションを作成
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b text-left">
-            <th className="py-3 px-4 font-medium text-gray-600">ID</th>
-            <th className="py-3 px-4 font-medium text-gray-600">リポジトリ</th>
-            <th className="py-3 px-4 font-medium text-gray-600">ステータス</th>
-            <th className="py-3 px-4 font-medium text-gray-600">開始時刻</th>
-            <th className="py-3 px-4 font-medium text-gray-600">アクション</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sessions.map((session) => (
-            <tr key={session.id} className="border-b hover:bg-gray-50">
-              <td className="py-3 px-4 font-mono text-sm">
-                {session.id.slice(0, 8)}...
-              </td>
-              <td className="py-3 px-4">{session.repo}</td>
-              <td className="py-3 px-4">
-                <StatusBadge status={session.status} />
-              </td>
-              <td className="py-3 px-4 text-sm text-gray-500">
-                {formatDate(session.startedAt)}
-              </td>
-              <td className="py-3 px-4">
-                <div className="flex gap-2">
-                  <Link
-                    href={`/sessions/${session.id}`}
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    詳細
-                  </Link>
-                  {session.status === "running" && (
-                    <button
-                      onClick={() => handleCancel(session.id)}
-                      className="text-red-600 hover:underline text-sm"
-                    >
-                      キャンセル
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[120px]">ID</TableHead>
+                <TableHead>リポジトリ</TableHead>
+                <TableHead className="w-[120px]">ステータス</TableHead>
+                <TableHead className="w-[180px]">開始時刻</TableHead>
+                <TableHead className="w-[150px]">アクション</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedSessions.map((session) => (
+                <TableRow key={session.id}>
+                  <TableCell className="font-mono text-sm">{session.id.slice(0, 8)}...</TableCell>
+                  <TableCell>{session.repo}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={session.status} />
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {formatDate(session.startedAt)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/sessions/${session.id}`}
+                        className={buttonVariants({ variant: 'link', size: 'sm' })}
+                      >
+                        詳細
+                      </Link>
+                      {session.status === 'running' && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setCancelTarget(session.id)}
+                        >
+                          キャンセル
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <PaginationItem key={p}>
+                  <PaginationLink isActive={page === p} onClick={() => setPage(p)}>
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+      <AlertDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setCancelTarget(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>セッションをキャンセル</AlertDialogTitle>
+            <AlertDialogDescription>
+              このセッションをキャンセルしますか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelConfirm}>確認</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    running: "bg-blue-100 text-blue-800",
-    completed: "bg-green-100 text-green-800",
-    failed: "bg-red-100 text-red-800",
-    pending: "bg-yellow-100 text-yellow-800",
+  const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+    running: 'default',
+    completed: 'secondary',
+    failed: 'destructive',
+    pending: 'outline',
   }
   const labels: Record<string, string> = {
-    running: "実行中",
-    completed: "完了",
-    failed: "失敗",
-    pending: "待機中",
+    running: '実行中',
+    completed: '完了',
+    failed: '失敗',
+    pending: '待機中',
   }
 
-  return (
-    <span
-      className={`inline-block px-2 py-1 rounded text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-800"}`}
-    >
-      {labels[status] || status}
-    </span>
-  )
+  return <Badge variant={variants[status] || 'outline'}>{labels[status] || status}</Badge>
 }
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleString("ja-JP")
+  return d.toLocaleString('ja-JP')
 }

@@ -22,6 +22,7 @@ cp .env.example .env.local
 ```
 
 `.env.local` を編集:
+
 ```
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-password-here
@@ -39,15 +40,15 @@ npm run dev
 
 ## コマンド
 
-| コマンド | 説明 |
-|----------|------|
-| `npm run dev` | 開発サーバーを起動（ホットリロード有効） |
-| `npm run build` | プロダクションビルド |
-| `npm start` | プロダクションサーバーを起動 |
-| `npm run lint` | ESLint でLintチェック |
-| `npm run typecheck` | TypeScript の型チェック |
-| `npm run format` | Prettier でフォーマット |
-| `npm run format:check` | フォーマットチェック |
+| コマンド               | 説明                                     |
+| ---------------------- | ---------------------------------------- |
+| `npm run dev`          | 開発サーバーを起動（ホットリロード有効） |
+| `npm run build`        | プロダクションビルド                     |
+| `npm start`            | プロダクションサーバーを起動             |
+| `npm run lint`         | ESLint でLintチェック                    |
+| `npm run typecheck`    | TypeScript の型チェック                  |
+| `npm run format`       | Prettier でフォーマット                  |
+| `npm run format:check` | フォーマットチェック                     |
 
 ## コーディング規約
 

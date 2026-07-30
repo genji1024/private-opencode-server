@@ -1,14 +1,20 @@
-"use client"
+'use client'
 
-import React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import React from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function NewSessionPage() {
   const router = useRouter()
 
-  const [repo, setRepo] = React.useState("genji1024/private-note")
-  const [instruction, setInstruction] = React.useState("")
+  const [repo, setRepo] = React.useState('genji1024/private-note')
+  const [instruction, setInstruction] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -20,89 +26,85 @@ export default function NewSessionPage() {
     try {
       setSubmitting(true)
       setError(null)
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ repo, instruction }),
       })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to create session")
+        throw new Error(data.error || 'Failed to create session')
       }
 
       const session = await res.json()
       router.push(`/sessions/${session.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create session")
+      setError(err instanceof Error ? err.message : 'Failed to create session')
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-2xl mx-auto">
         <Link
           href="/sessions"
-          className="text-blue-600 hover:underline mb-4 inline-block"
+          className={buttonVariants({ variant: 'link', className: 'mb-4 -ml-2' })}
         >
           ← 一覧に戻る
         </Link>
 
-        <h1 className="text-2xl font-bold mb-6">新規セッション作成</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>新規セッション作成</CardTitle>
+            <CardDescription>opencode に実行させるタスクを定義します</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="repo">リポジトリ</Label>
+                <Input
+                  id="repo"
+                  type="text"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                  placeholder="owner/repo"
+                  className="font-mono"
+                  required
+                />
+              </div>
 
-        <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              リポジトリ
-            </label>
-            <input
-              type="text"
-              value={repo}
-              onChange={(e) => setRepo(e.target.value)}
-              placeholder="owner/repo"
-              className="w-full border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="instruction">指示文</Label>
+                <Textarea
+                  id="instruction"
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  placeholder="opencode に実行させる指示を入力..."
+                  rows={5}
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              指示文
-            </label>
-            <textarea
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-              placeholder="opencode に実行させる指示を入力..."
-              rows={5}
-              className="w-full border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-          {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? "作成中..." : "作成"}
-            </button>
-            <Link
-              href="/sessions"
-              className="px-6 py-2 border rounded hover:bg-gray-50 transition-colors text-center"
-            >
-              キャンセル
-            </Link>
-          </div>
-        </form>
+              <div className="flex gap-3">
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? '作成中...' : '作成'}
+                </Button>
+                <Link href="/sessions" className={buttonVariants({ variant: 'outline' })}>
+                  キャンセル
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </main>
   )

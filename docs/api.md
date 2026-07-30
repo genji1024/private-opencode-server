@@ -5,6 +5,7 @@
 すべての API エンドポイント（`/api/auth` と `/api/webhook` を除く）は認証が必要。
 
 認証方法:
+
 - `Authorization: Basic <base64(username:password)>` ヘッダー
 - `auth_token` Cookie
 
@@ -15,6 +16,7 @@
 ログイン。フォームデータを受け取り、認証後に Cookie を設定して `/` にリダイレクト。
 
 **リクエスト:**
+
 ```
 Content-Type: application/x-www-form-urlencoded
 
@@ -22,6 +24,7 @@ username=admin&password=changeme
 ```
 
 **レスポンス:**
+
 - 成功: `302 Redirect` to `/`（`auth_token` Cookie 設定済み）
 - 失敗: `302 Redirect` to `/login?error=1`
 
@@ -32,6 +35,7 @@ username=admin&password=changeme
 セッション一覧を取得。
 
 **レスポンス:**
+
 ```json
 [
   {
@@ -55,6 +59,7 @@ username=admin&password=changeme
 新規セッションを作成。
 
 **リクエスト:**
+
 ```json
 {
   "repo": "owner/repo",
@@ -63,6 +68,7 @@ username=admin&password=changeme
 ```
 
 **レスポンス:** `201 Created`
+
 ```json
 {
   "id": "uuid",
@@ -84,6 +90,7 @@ username=admin&password=changeme
 セッション詳細を取得。
 
 **レスポンス:**
+
 ```json
 {
   "session": { ... },
@@ -106,6 +113,7 @@ username=admin&password=changeme
 セッションをキャンセル。
 
 **レスポンス:**
+
 ```json
 { "success": true }
 ```
@@ -117,6 +125,7 @@ username=admin&password=changeme
 SSE（Server-Sent Events）でリアルタイムログストリームを取得。
 
 **レスポンス:** `text/event-stream`
+
 ```
 data: {"id":"uuid","sessionId":"uuid","timestamp":"...","stream":"stdout","text":"..."}
 
@@ -133,11 +142,13 @@ data: {"id":"uuid","status":"completed",...}
 実行中のセッションにメッセージを送信。
 
 **リクエスト:**
+
 ```json
 { "message": "Please continue..." }
 ```
 
 **レスポンス:**
+
 ```json
 { "success": true }
 ```
@@ -149,10 +160,9 @@ data: {"id":"uuid","status":"completed",...}
 設定一覧を取得。
 
 **レスポンス:**
+
 ```json
-[
-  { "key": "github_token", "value": "ghp_...", "updatedAt": "2026-01-01T00:00:00Z" }
-]
+[{ "key": "github_token", "value": "ghp_...", "updatedAt": "2026-01-01T00:00:00Z" }]
 ```
 
 ---
@@ -162,11 +172,13 @@ data: {"id":"uuid","status":"completed",...}
 設定を更新。
 
 **リクエスト:**
+
 ```json
 { "value": "new-value" }
 ```
 
 **レスポンス:**
+
 ```json
 { "success": true }
 ```
@@ -178,6 +190,7 @@ data: {"id":"uuid","status":"completed",...}
 設定を削除。
 
 **レスポンス:**
+
 ```json
 { "success": true }
 ```
@@ -189,6 +202,7 @@ data: {"id":"uuid","status":"completed",...}
 opencode serve のステータスを取得。
 
 **レスポンス:**
+
 ```json
 {
   "running": true,
@@ -207,20 +221,25 @@ opencode serve のステータスを取得。
 opencode serve を起動/停止。
 
 **リクエスト:**
+
 ```json
 { "action": "start" }
 ```
+
 or
+
 ```json
 { "action": "stop" }
 ```
 
 **レスポンス (start):**
+
 ```json
 { "url": "http://127.0.0.1:4096", "port": 4096, "running": true }
 ```
 
 **レスポンス (stop):**
+
 ```json
 { "stopped": true }
 ```
@@ -232,6 +251,7 @@ or
 GitHub Webhook イベントを受信。
 
 **レスポンス:**
+
 ```json
 { "received": true, "bodyLength": 1234 }
 ```

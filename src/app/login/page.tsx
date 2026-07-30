@@ -1,7 +1,12 @@
-"use client"
+'use client'
 
-import { useRouter } from "next/navigation"
-import { useState, FormEvent } from "react"
+import { useRouter } from 'next/navigation'
+import { useState, FormEvent } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Pencil } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,13 +20,13 @@ export default function LoginPage() {
 
     const formData = new FormData(e.currentTarget)
     try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
+      const res = await fetch('/api/auth', {
+        method: 'POST',
         body: formData,
-        redirect: "manual",
+        redirect: 'manual',
       })
-      if (res.status === 0 || res.type === "opaqueredirect" || res.ok) {
-        window.location.href = "/"
+      if (res.status === 0 || res.type === 'opaqueredirect' || res.ok) {
+        window.location.href = '/'
         return
       }
       setError(true)
@@ -33,47 +38,42 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <h1 className="text-2xl font-bold mb-8">ログイン</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4"
-      >
-        <div>
-          <label htmlFor="username" className="block text-sm font-medium mb-1">
-            ユーザー名
-          </label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-1">
-            パスワード
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
-        {error && (
-          <p className="text-sm text-red-600">ユーザー名またはパスワードが正しくありません</p>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-black text-white py-2 hover:bg-gray-800 disabled:opacity-50"
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-b from-background to-muted/50">
+      <div className="mb-8 text-center">
+        <div
+          className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4"
+          style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
         >
-          {loading ? "ログイン中..." : "ログイン"}
-        </button>
-      </form>
+          <Pencil size={24} />
+        </div>
+        <h1 className="text-xl font-bold tracking-tight">OpenCode Server</h1>
+        <p className="mt-1 text-sm text-muted-foreground">管理画面にアクセス</p>
+      </div>
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-lg">ログイン</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">ユーザー名</Label>
+              <Input id="username" name="username" type="text" placeholder="admin" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">パスワード</Label>
+              <Input id="password" name="password" type="password" required />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive text-center">
+                ユーザー名またはパスワードが正しくありません
+              </p>
+            )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'ログイン中...' : 'ログイン'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   )
 }

@@ -11,12 +11,12 @@ Docker を使用して VPS にデプロイすると、セッション管理・Op
 
 ### ファイル構成
 
-| ファイル | 説明 |
-|---------|------|
-| `Dockerfile` | マルチステージビルド（Node.js 26 + Alpine） |
-| `docker-compose.yml` | サービス定義・ポート・環境変数・ボリューム |
-| `deploy.sh` | VPS への自動デプロイスクリプト |
-| `.dockerignore` | ビルドコンテキストから除外するファイル |
+| ファイル             | 説明                                        |
+| -------------------- | ------------------------------------------- |
+| `Dockerfile`         | マルチステージビルド（Node.js 26 + Alpine） |
+| `docker-compose.yml` | サービス定義・ポート・環境変数・ボリューム  |
+| `deploy.sh`          | VPS への自動デプロイスクリプト              |
+| `.dockerignore`      | ビルドコンテキストから除外するファイル      |
 
 ### ローカルで Docker 起動
 
@@ -53,15 +53,15 @@ docker compose up -d
 
 ### Docker 環境変数
 
-| 変数名 | 必須 | デフォルト | 説明 |
-|--------|------|-----------|------|
-| `ADMIN_USERNAME` | いいえ | `admin` | 認証ユーザー名 |
-| `ADMIN_PASSWORD` | はい | — | 認証パスワード |
-| `OPENCODE_SERVER_URL` | いいえ | `http://127.0.0.1:4096` | opencode serve の URL |
-| `OPENCODE_SERVER_PASSWORD` | いいえ | — | opencode serve のパスワード |
-| `GITHUB_WEBHOOK_SECRET` | いいえ | — | GitHub Webhook のシークレット |
-| `PORT` | いいえ | `3000` | ホストに公開するポート |
-| `BASE_URL` | いいえ | 自動判定 | ベース URL の手動指定。未設定時はヘッダーから自動判定 |
+| 変数名                     | 必須   | デフォルト              | 説明                                                  |
+| -------------------------- | ------ | ----------------------- | ----------------------------------------------------- |
+| `ADMIN_USERNAME`           | いいえ | `admin`                 | 認証ユーザー名                                        |
+| `ADMIN_PASSWORD`           | はい   | —                       | 認証パスワード                                        |
+| `OPENCODE_SERVER_URL`      | いいえ | `http://127.0.0.1:4096` | opencode serve の URL                                 |
+| `OPENCODE_SERVER_PASSWORD` | いいえ | —                       | opencode serve のパスワード                           |
+| `GITHUB_WEBHOOK_SECRET`    | いいえ | —                       | GitHub Webhook のシークレット                         |
+| `PORT`                     | いいえ | `3000`                  | ホストに公開するポート                                |
+| `BASE_URL`                 | いいえ | 自動判定                | ベース URL の手動指定。未設定時はヘッダーから自動判定 |
 
 ### リバースプロキシ配下での利用
 

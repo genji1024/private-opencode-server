@@ -1,6 +1,10 @@
-"use client"
+'use client'
 
-import React from "react"
+import React from 'react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Terminal, Server } from 'lucide-react'
 
 interface ServerStatus {
   running: boolean
@@ -26,7 +30,7 @@ export default function OpenCodeEmbedPage() {
 
   async function fetchStatus() {
     try {
-      const res = await fetch("/api/opencode-serve")
+      const res = await fetch('/api/opencode-serve')
       if (res.ok) {
         const data = await res.json()
         setStatus(data)
@@ -36,7 +40,7 @@ export default function OpenCodeEmbedPage() {
         setError(data?.error ?? `API error: ${res.status}`)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fetch error")
+      setError(e instanceof Error ? e.message : 'Fetch error')
     } finally {
       setLoading(false)
     }
@@ -46,10 +50,10 @@ export default function OpenCodeEmbedPage() {
     setActionLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/opencode-serve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start" }),
+      const res = await fetch('/api/opencode-serve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -61,7 +65,7 @@ export default function OpenCodeEmbedPage() {
         setError(data?.error ?? `起動に失敗しました (HTTP ${res.status})`)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "起動に失敗しました")
+      setError(e instanceof Error ? e.message : '起動に失敗しました')
     } finally {
       setActionLoading(false)
     }
@@ -71,15 +75,15 @@ export default function OpenCodeEmbedPage() {
     setActionLoading(true)
     setError(null)
     try {
-      await fetch("/api/opencode-serve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "stop" }),
+      await fetch('/api/opencode-serve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' }),
       })
       setStatus((prev) => (prev ? { ...prev, running: false, pid: null } : null))
       setIframeLoaded(false)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "停止に失敗しました")
+      setError(e instanceof Error ? e.message : '停止に失敗しました')
     } finally {
       setActionLoading(false)
     }
@@ -88,107 +92,98 @@ export default function OpenCodeEmbedPage() {
   const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false
 
   return (
-    <main className="flex h-screen flex-col">
-      <div className="flex items-center justify-between border-b px-6 py-3">
+    <main className="flex h-[calc(100vh-1px)] flex-col">
+      <div className="flex items-center justify-between border-b px-6 py-3 bg-card">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold">OpenCode Web UI</h1>
-          {status && (
+          <div className="flex items-center gap-3">
             <span
-              className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${status.running ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+              style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
             >
-              {status.running ? `接続中 (port ${status.port})` : "停止中"}
+              <Terminal className="size-4" />
             </span>
+            <h1 className="text-base font-semibold">OpenCode Web UI</h1>
+          </div>
+          {status && (
+            <Badge variant={status.running ? 'default' : 'secondary'}>
+              {status.running ? `接続中 (port ${status.port})` : '停止中'}
+            </Badge>
           )}
           {status?.opencodeAvailable === false && (
-            <span className="inline-block rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-              opencode CLI 未検出
-            </span>
-          )}
-          {status?.running && !iframeLoaded && (
-            <span className="text-xs text-yellow-600">読み込み中...</span>
+            <Badge variant="destructive">opencode CLI 未検出</Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={fetchStatus}
-            className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
+          <Button variant="outline" size="sm" onClick={fetchStatus}>
             更新
-          </button>
+          </Button>
           {!status?.running ? (
-            <button
-              onClick={handleStart}
-              disabled={!canStart}
-              className="rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              {actionLoading ? "起動中..." : "サーバー起動"}
-            </button>
+            <Button size="sm" onClick={handleStart} disabled={!canStart}>
+              {actionLoading ? '起動中...' : 'サーバー起動'}
+            </Button>
           ) : (
-            <button
-              onClick={handleStop}
-              disabled={actionLoading}
-              className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-            >
-              {actionLoading ? "停止中..." : "サーバー停止"}
-            </button>
+            <Button size="sm" variant="destructive" onClick={handleStop} disabled={actionLoading}>
+              {actionLoading ? '停止中...' : 'サーバー停止'}
+            </Button>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="border-b bg-red-50 px-6 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <Alert variant="destructive" className="mx-6 mt-3">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="relative flex-1 bg-gray-100">
+      <div className="relative flex-1 bg-muted/30">
         {status?.running ? (
           <>
             {!iframeLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="mb-2 text-lg text-gray-500">
+                  <div
+                    className="mx-auto mb-4 w-10 h-10 rounded-full border-2 animate-spin"
+                    style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}
+                  />
+                  <div className="mb-1 text-sm text-muted-foreground">
                     OpenCode Web UI を読み込み中...
                   </div>
-                  <div className="text-sm text-gray-400">
-                    {status.url}
-                  </div>
+                  <div className="text-xs text-muted-foreground/60">{status.url}</div>
                 </div>
               </div>
             )}
             <iframe
               key={iframeKey}
               src={status.url}
-              className={`h-full w-full border-0 ${iframeLoaded ? "" : "invisible"}`}
+              className={`h-full w-full border-0 ${iframeLoaded ? '' : 'invisible'}`}
               onLoad={() => setIframeLoaded(true)}
               title="OpenCode Web UI"
             />
           </>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <div className="mb-4 text-6xl">&#9881;</div>
-              <p className="mb-2 text-lg text-gray-600">
-                OpenCode サーバーは停止しています
-              </p>
+            <div className="text-center max-w-sm">
+              <div
+                className="mx-auto mb-6 w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: 'var(--muted)' }}
+              >
+                <Server size={28} strokeWidth={1.5} style={{ color: 'var(--muted-foreground)' }} />
+              </div>
+              <p className="mb-1 text-base font-medium text-foreground">サーバーは停止しています</p>
               {status?.opencodeAvailable === false ? (
-                <p className="mb-6 text-sm text-red-500">
+                <p className="mb-6 text-sm text-destructive">
                   opencode CLI が見つかりません。
                   <br />
                   サーバー環境に opencode がインストールされているか確認してください。
                 </p>
               ) : (
-                <p className="mb-6 text-sm text-gray-400">
+                <p className="mb-6 text-sm text-muted-foreground">
                   「サーバー起動」ボタンで opencode serve を開始します
                 </p>
               )}
-              <button
-                onClick={handleStart}
-                disabled={!canStart}
-                className="rounded bg-green-600 px-6 py-2 text-white hover:bg-green-700 disabled:opacity-50"
-              >
-                {actionLoading ? "起動中..." : "サーバー起動"}
-              </button>
+              <Button onClick={handleStart} disabled={!canStart}>
+                {actionLoading ? '起動中...' : 'サーバー起動'}
+              </Button>
             </div>
           </div>
         )}

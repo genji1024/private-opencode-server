@@ -6,6 +6,10 @@ let serverProcess: ChildProcess | null = null
 let serverPort = 4096
 let isRunning = false
 
+function getPort(): number {
+  return parseInt(process.env.OPENCODE_SERVE_PORT ?? '4096', 10)
+}
+
 function getOpencodeBin(): string {
   const localBin = pathResolve(process.cwd(), 'node_modules', '.bin', 'opencode')
   if (existsSync(localBin)) {
@@ -13,7 +17,6 @@ function getOpencodeBin(): string {
   }
   return 'opencode'
 }
-
 function getPostinstallScript(): string | null {
   const postinstallPath = pathResolve(
     process.cwd(),
@@ -38,15 +41,6 @@ function runPostinstall(): boolean {
   }
 }
 
-export function getServePort(): number {
-  return parseInt(process.env.OPENCODE_SERVE_PORT ?? '4096', 10)
-}
-
-export function getServerUrl(): string {
-  serverPort = getServePort()
-  return `http://127.0.0.1:${serverPort}`
-}
-
 export function checkOpencodeAvailable(): boolean {
   const bin = getOpencodeBin()
   try {
@@ -65,8 +59,9 @@ export function checkOpencodeAvailable(): boolean {
   }
 }
 
-async function isServerReachable(): Promise<boolean> {
-  const url = getServerUrl()
+async function isServerReachable(port?: number): Promise<boolean> {
+  const p = port ?? getPort()
+  const url = `http://127.0.0.1:${p}`
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 2000)
@@ -78,17 +73,33 @@ async function isServerReachable(): Promise<boolean> {
   }
 }
 
-export async function startServer(): Promise<{ url: string; port: number }> {
-  const port = getServePort()
+function stripAnsi(s: string): string {
+  return s.replace(/\x1b\[[0-9;]*m/g, '')
+}
 
-  const reachable = await isServerReachable()
-  if (reachable) {
+function tryKillPort(port: number): void {
+  try {
+    execSync(
+      `fuser -k ${port}/tcp 2>/dev/null || lsof -ti:${port} | xargs kill -9 2>/dev/null || true`,
+      {
+        stdio: 'ignore',
+        timeout: 3000,
+      },
+    )
+  } catch {}
+}
+
+export async function startServer(): Promise<{ url: string; port: number }> {
+  const port = getPort()
+
+  if (await isServerReachable(port)) {
     isRunning = true
-    return { url: getServerUrl(), port }
+    serverPort = port
+    return { url: `http://127.0.0.1:${port}`, port }
   }
 
   if (isRunning && serverProcess && !serverProcess.killed) {
-    return { url: getServerUrl(), port }
+    return { url: `http://127.0.0.1:${serverPort}`, port: serverPort }
   }
 
   if (!checkOpencodeAvailable()) {
@@ -98,6 +109,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   }
 
   serverPort = port
+  tryKillPort(port)
   const bin = getOpencodeBin()
 
   return new Promise((resolvePromise, reject) => {
@@ -106,7 +118,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       env: {
         ...process.env,
         HOME: process.env.HOME || '/tmp',
-        PATH: `${pathResolve(process.cwd(), 'node_modules', '.bin')}:${process.env.PATH}`,
+        PATH: `${pathResolve(process.cwd(), 'node_modules', '.bin')}:${process.env.PATH || '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'}`,
         XDG_CONFIG_HOME:
           process.env.XDG_CONFIG_HOME || pathResolve(process.env.HOME || '/tmp', '.config'),
         XDG_DATA_HOME:
@@ -122,35 +134,35 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
     const timeout = setTimeout(async () => {
       if (settled) return
-      const reachable = await isServerReachable()
-      if (reachable) {
+      if (await isServerReachable(port)) {
         settled = true
-        resolvePromise({ url: getServerUrl(), port })
+        resolvePromise({ url: `http://127.0.0.1:${port}`, port })
       } else {
         settled = true
         isRunning = false
         serverProcess = null
-        reject(new Error('opencode serve が起動しましたが、接続できませんでした。'))
+        const detail = stderrOutput.trim() ? ` (stderr: ${stripAnsi(stderrOutput.trim())})` : ''
+        reject(new Error(`opencode serve が起動しましたが、接続できませんでした。${detail}`))
       }
-    }, 8000)
+    }, 10000)
 
-    proc.on('error', (err) => {
+    const handleError = (label: string) => {
       if (settled) return
       settled = true
       isRunning = false
       serverProcess = null
       clearTimeout(timeout)
-      reject(new Error(`opencode serve の起動に失敗しました: ${err.message}`))
-    })
+      const detail = stderrOutput.trim() ? ` (stderr: ${stripAnsi(stderrOutput.trim())})` : ''
+      reject(new Error(`opencode serve ${label}${detail}`))
+    }
+
+    proc.on('error', (err) => handleError(`の起動に失敗しました: ${err.message}`))
 
     proc.on('close', (code) => {
       isRunning = false
       serverProcess = null
       if (!settled) {
-        settled = true
-        clearTimeout(timeout)
-        const detail = stderrOutput.trim() ? ` (stderr: ${stderrOutput.trim()})` : ''
-        reject(new Error(`opencode serve が終了しました (exit code: ${code})${detail}`))
+        handleError(`が終了しました (exit code: ${code})`)
       }
     })
 
@@ -184,15 +196,15 @@ export function stopServer(): boolean {
 
 export async function isServerRunning(): Promise<boolean> {
   if (isRunning && serverProcess && !serverProcess.killed) return true
-  return isServerReachable()
+  return isServerReachable(serverPort)
 }
 
 export async function getServerStatus() {
-  const reachable = await isServerReachable()
+  const reachable = await isServerReachable(serverPort)
   return {
     running: reachable || (isRunning && serverProcess !== null && !serverProcess.killed),
-    port: getServePort(),
-    url: getServerUrl(),
+    port: serverPort,
+    url: `http://127.0.0.1:${serverPort}`,
     pid: serverProcess?.pid ?? null,
     opencodeAvailable: checkOpencodeAvailable(),
   }

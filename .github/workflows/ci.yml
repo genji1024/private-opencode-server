@@ -27,6 +27,52 @@ jobs:
       - run: npm install
       - run: npm run build
 
+  # Verifies that opencode serve starts, stays running, and responds to requests
+  opencode-serve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Start opencode serve in background
+        run: |
+          PORT=4199
+          mkdir -p "$HOME/.config/opencode" "$HOME/.local/share/opencode"
+          ./node_modules/.bin/opencode serve --port "$PORT" --print-logs &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> "$GITHUB_ENV"
+          echo "PORT=$PORT" >> "$GITHUB_ENV"
+          # Wait for the server to become ready
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT" 2>/dev/null | grep -q .; then
+              echo "opencode serve is ready (attempt $i)"
+              break
+            fi
+            sleep 1
+          done
+      - name: Verify server is reachable and stable
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT" 2>/dev/null || echo "000")
+          echo "HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "000" ]; then
+            echo "ERROR: opencode serve did not start within 30 seconds"
+            exit 1
+          fi
+          # Verify it stays up for 5 seconds
+          sleep 5
+          HTTP_CODE2=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT" 2>/dev/null || echo "000")
+          if [ "$HTTP_CODE2" = "000" ]; then
+            echo "ERROR: opencode serve stopped unexpectedly"
+            exit 1
+          fi
+          echo "opencode serve is stable (HTTP $HTTP_CODE2)"
+      - name: Cleanup
+        if: always()
+        run: kill "$SERVER_PID" 2>/dev/null || true
+
   docker-build:
     runs-on: ubuntu-latest
     timeout-minutes: 15

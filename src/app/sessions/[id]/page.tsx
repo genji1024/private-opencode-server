@@ -1,14 +1,10 @@
-"use client"
+'use client'
 
-import React from "react"
-import Link from "next/link"
-import { SessionRow, LogRow } from "@/lib/store"
+import React from 'react'
+import Link from 'next/link'
+import { SessionRow, LogRow } from '@/lib/store'
 
-export default function SessionDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return <SessionDetail params={params} />
 }
 
@@ -23,7 +19,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   const [logs, setLogs] = React.useState<LogRow[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
-  const [message, setMessage] = React.useState("")
+  const [message, setMessage] = React.useState('')
   const [sending, setSending] = React.useState(false)
   const [sendError, setSendError] = React.useState<string | null>(null)
 
@@ -32,12 +28,12 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
     try {
       setLoading(true)
       const res = await fetch(`/api/sessions/${resolvedId}`)
-      if (!res.ok) throw new Error("Session not found")
+      if (!res.ok) throw new Error('Session not found')
       const data = await res.json()
       setSession(data.session)
       setLogs(data.logs)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -60,7 +56,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
       } catch {}
     }
 
-    eventSource.addEventListener("done", (event) => {
+    eventSource.addEventListener('done', (event) => {
       try {
         const updated = JSON.parse(event.data) as SessionRow
         setSession(updated)
@@ -85,17 +81,17 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
       setSending(true)
       setSendError(null)
       const res = await fetch(`/api/sessions/${resolvedId}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to send message")
+        throw new Error(data.error || 'Failed to send message')
       }
-      setMessage("")
+      setMessage('')
     } catch (err) {
-      setSendError(err instanceof Error ? err.message : "Failed to send")
+      setSendError(err instanceof Error ? err.message : 'Failed to send')
     } finally {
       setSending(false)
     }
@@ -103,13 +99,13 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
 
   async function handleCancel() {
     if (!resolvedId) return
-    if (!confirm("このセッションをキャンセルしますか？")) return
+    if (!confirm('このセッションをキャンセルしますか？')) return
     try {
-      const res = await fetch(`/api/sessions/${resolvedId}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Failed to cancel session")
+      const res = await fetch(`/api/sessions/${resolvedId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to cancel session')
       fetchSession()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Cancel failed")
+      alert(err instanceof Error ? err.message : 'Cancel failed')
     }
   }
 
@@ -125,7 +121,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
     return (
       <main className="min-h-screen p-8">
         <div className="text-red-500">
-          {error || "セッションが見つかりません"}
+          {error || 'セッションが見つかりません'}
           <Link href="/sessions" className="block mt-4 text-blue-600 hover:underline">
             ← 一覧に戻る
           </Link>
@@ -135,26 +131,23 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const statusLabels: Record<string, string> = {
-    running: "実行中",
-    completed: "完了",
-    failed: "失敗",
-    pending: "待機中",
+    running: '実行中',
+    completed: '完了',
+    failed: '失敗',
+    pending: '待機中',
   }
 
   return (
     <main className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/sessions"
-          className="text-blue-600 hover:underline mb-4 inline-block"
-        >
+        <Link href="/sessions" className="text-blue-600 hover:underline mb-4 inline-block">
           ← 一覧に戻る
         </Link>
 
         <div className="bg-white border rounded-lg p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-2xl font-bold">セッション詳細</h1>
-            {session.status === "running" && (
+            {session.status === 'running' && (
               <button
                 onClick={handleCancel}
                 className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
@@ -217,24 +210,22 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
               logs.map((log) => (
                 <div
                   key={log.id}
-                  className={`${log.stream === "stderr" ? "text-red-400" : "text-gray-100"}`}
+                  className={`${log.stream === 'stderr' ? 'text-red-400' : 'text-gray-100'}`}
                 >
                   <span className="text-gray-500 mr-2">
-                    {new Date(log.timestamp).toLocaleTimeString("ja-JP")}
+                    {new Date(log.timestamp).toLocaleTimeString('ja-JP')}
                   </span>
                   {log.text}
                 </div>
               ))
             )}
-            {session.status === "running" && (
-              <div className="text-gray-500 animate-pulse mt-2">
-                ログを受信中...
-              </div>
+            {session.status === 'running' && (
+              <div className="text-gray-500 animate-pulse mt-2">ログを受信中...</div>
             )}
           </div>
         </div>
 
-        {session.status === "running" && (
+        {session.status === 'running' && (
           <div className="bg-white border rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">メッセージを送信</h2>
             <form onSubmit={handleSendMessage}>
@@ -245,15 +236,13 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
                 rows={3}
                 className="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              {sendError && (
-                <p className="text-red-500 text-sm mt-2">{sendError}</p>
-              )}
+              {sendError && <p className="text-red-500 text-sm mt-2">{sendError}</p>}
               <button
                 type="submit"
                 disabled={sending || !message.trim()}
                 className="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
-                {sending ? "送信中..." : "送信"}
+                {sending ? '送信中...' : '送信'}
               </button>
             </form>
           </div>
@@ -263,6 +252,6 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   )
 
   function formatDate(iso: string): string {
-    return new Date(iso).toLocaleString("ja-JP")
+    return new Date(iso).toLocaleString('ja-JP')
   }
 }

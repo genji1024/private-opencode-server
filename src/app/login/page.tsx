@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import { useRouter } from "next/navigation"
-import { useState, FormEvent } from "react"
+import { useRouter } from 'next/navigation'
+import { useState, FormEvent } from 'react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,13 +15,13 @@ export default function LoginPage() {
 
     const formData = new FormData(e.currentTarget)
     try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
+      const res = await fetch('/api/auth', {
+        method: 'POST',
         body: formData,
-        redirect: "manual",
+        redirect: 'manual',
       })
-      if (res.status === 0 || res.type === "opaqueredirect" || res.ok) {
-        window.location.href = "/"
+      if (res.status === 0 || res.type === 'opaqueredirect' || res.ok) {
+        window.location.href = '/'
         return
       }
       setError(true)
@@ -35,10 +35,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <h1 className="text-2xl font-bold mb-8">ログイン</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <div>
           <label htmlFor="username" className="block text-sm font-medium mb-1">
             ユーザー名
@@ -71,7 +68,7 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded bg-black text-white py-2 hover:bg-gray-800 disabled:opacity-50"
         >
-          {loading ? "ログイン中..." : "ログイン"}
+          {loading ? 'ログイン中...' : 'ログイン'}
         </button>
       </form>
     </main>

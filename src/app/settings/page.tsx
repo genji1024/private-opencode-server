@@ -174,7 +174,12 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold tracking-tight mb-6">設定</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">設定</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            トークン・リポジトリ・opencode の設定を管理
+          </p>
+        </div>
 
         <form onSubmit={handleSave} className="space-y-6">
           <Card>

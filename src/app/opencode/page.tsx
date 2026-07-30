@@ -91,10 +91,31 @@ export default function OpenCodeEmbedPage() {
   const canStart = !actionLoading && !loading && status?.opencodeAvailable !== false
 
   return (
-    <main className="flex h-[calc(100vh-57px)] flex-col">
-      <div className="flex items-center justify-between border-b px-6 py-3">
+    <main className="flex h-[calc(100vh-1px)] flex-col">
+      <div className="flex items-center justify-between border-b px-6 py-3 bg-card">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold">OpenCode Web UI</h1>
+          <div className="flex items-center gap-3">
+            <span
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+              style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" x2="20" y1="19" y2="19" />
+              </svg>
+            </span>
+            <h1 className="text-base font-semibold">OpenCode Web UI</h1>
+          </div>
           {status && (
             <Badge variant={status.running ? "default" : "secondary"}>
               {status.running ? `接続中 (port ${status.port})` : "停止中"}
@@ -102,9 +123,6 @@ export default function OpenCodeEmbedPage() {
           )}
           {status?.opencodeAvailable === false && (
             <Badge variant="destructive">opencode CLI 未検出</Badge>
-          )}
-          {status?.running && !iframeLoaded && (
-            <span className="text-sm text-muted-foreground">読み込み中...</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -116,7 +134,6 @@ export default function OpenCodeEmbedPage() {
               size="sm"
               onClick={handleStart}
               disabled={!canStart}
-              className="bg-green-600 hover:bg-green-700"
             >
               {actionLoading ? "起動中..." : "サーバー起動"}
             </Button>
@@ -139,16 +156,17 @@ export default function OpenCodeEmbedPage() {
         </Alert>
       )}
 
-      <div className="relative flex-1 bg-muted">
+      <div className="relative flex-1 bg-muted/30">
         {status?.running ? (
           <>
             {!iframeLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="mb-2 text-lg text-muted-foreground">
+                  <div className="mx-auto mb-4 w-10 h-10 rounded-full border-2 animate-spin" style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }} />
+                  <div className="mb-1 text-sm text-muted-foreground">
                     OpenCode Web UI を読み込み中...
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs text-muted-foreground/60">
                     {status.url}
                   </div>
                 </div>
@@ -164,10 +182,31 @@ export default function OpenCodeEmbedPage() {
           </>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <div className="mb-4 text-6xl">&#9881;</div>
-              <p className="mb-2 text-lg text-muted-foreground">
-                OpenCode サーバーは停止しています
+            <div className="text-center max-w-sm">
+              <div
+                className="mx-auto mb-6 w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: "var(--muted)" }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+                  <line x1="6" y1="6" x2="6.01" y2="6" />
+                  <line x1="6" y1="18" x2="6.01" y2="18" />
+                </svg>
+              </div>
+              <p className="mb-1 text-base font-medium text-foreground">
+                サーバーは停止しています
               </p>
               {status?.opencodeAvailable === false ? (
                 <p className="mb-6 text-sm text-destructive">
@@ -180,11 +219,7 @@ export default function OpenCodeEmbedPage() {
                   「サーバー起動」ボタンで opencode serve を開始します
                 </p>
               )}
-              <Button
-                onClick={handleStart}
-                disabled={!canStart}
-                className="bg-green-600 hover:bg-green-700"
-              >
+              <Button onClick={handleStart} disabled={!canStart}>
                 {actionLoading ? "起動中..." : "サーバー起動"}
               </Button>
             </div>

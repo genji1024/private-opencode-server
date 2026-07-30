@@ -80,6 +80,7 @@ graph TB
 SQLite (better-sqlite3) を使用したデータ永続化レイヤー。
 
 **テーブル構成:**
+
 - `sessions` — セッション情報（ID, リポジトリ, ステータス, 実行時間等）
 - `logs` — セッションごとのログ（stdout/stderr）
 - `configs` — キーバリューストア（設定保存用）
@@ -87,6 +88,7 @@ SQLite (better-sqlite3) を使用したデータ永続化レイヤー。
 ### セッションマネージャー (`session-manager.ts`)
 
 セッションのライフサイクル管理:
+
 - 作成 → プロセス起動 → ログ記録 → 完了/失敗
 - メッセージ送信（stdin 経由）
 - キャンセル（SIGTERM → SIGKILL）
@@ -94,6 +96,7 @@ SQLite (better-sqlite3) を使用したデータ永続化レイヤー。
 ### OpenCode Serve (`opencode-serve.ts`)
 
 `opencode serve` コマンドの管理:
+
 - ポート指定でサーバー起動
 - ヘルスチェック（2秒タイムアウト）
 - 起動/停止/ステータス取得

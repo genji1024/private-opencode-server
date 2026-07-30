@@ -1,20 +1,17 @@
-import { NextRequest } from "next/server"
-import { verifyAuth } from "@/lib/auth"
-import { store, LogRow } from "@/lib/store"
+import { NextRequest } from 'next/server'
+import { verifyAuth } from '@/lib/auth'
+import { store, LogRow } from '@/lib/store'
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   if (!verifyAuth(_request)) {
-    return new Response("Unauthorized", { status: 401 })
+    return new Response('Unauthorized', { status: 401 })
   }
 
   const session = store.getSession(id)
   if (!session) {
-    return new Response("Session not found", { status: 404 })
+    return new Response('Session not found', { status: 404 })
   }
 
   let lastIndex = 0
@@ -40,19 +37,21 @@ export async function GET(
         lastIndex = logs.length
 
         const currentSession = store.getSession(id)
-        if (currentSession && currentSession.status !== "running") {
+        if (currentSession && currentSession.status !== 'running') {
           const remaining = store.getLogs(id).slice(lastIndex)
           for (const log of remaining) {
             const data = `data: ${JSON.stringify(log)}\n\n`
             controller.enqueue(encoder.encode(data))
           }
-          controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify(currentSession)}\n\n`))
+          controller.enqueue(
+            encoder.encode(`event: done\ndata: ${JSON.stringify(currentSession)}\n\n`),
+          )
           clearInterval(interval)
           controller.close()
         }
       }, 500)
 
-      _request.signal.addEventListener("abort", () => {
+      _request.signal.addEventListener('abort', () => {
         clearInterval(interval)
         controller.close()
       })
@@ -61,9 +60,9 @@ export async function GET(
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
     },
   })
 }

@@ -1,10 +1,10 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import "./globals.css"
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: "OpenCode Server",
-  description: "OpenCode ヘッドレスサーバー管理",
+  title: 'OpenCode Server',
+  description: 'OpenCode ヘッドレスサーバー管理',
 }
 
 export default function RootLayout({

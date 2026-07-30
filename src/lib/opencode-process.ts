@@ -1,6 +1,6 @@
-import { spawn, ChildProcess } from "child_process"
-import { v4 as uuidv4 } from "uuid"
-import { store, LogRow } from "./store"
+import { spawn, ChildProcess } from 'child_process'
+import { v4 as uuidv4 } from 'uuid'
+import { store, LogRow } from './store'
 
 export interface OpenCodeProcessResult {
   exitCode: number | null
@@ -31,14 +31,14 @@ export async function startOpenCodeProcess(
   instruction: string,
   cwd?: string,
 ): Promise<void> {
-  const args = ["run", "--format", "json"]
+  const args = ['run', '--format', 'json']
   if (instruction) {
     args.push(instruction)
   }
 
-  const proc = spawn("opencode", args, {
+  const proc = spawn('opencode', args, {
     cwd,
-    stdio: ["pipe", "pipe", "pipe"],
+    stdio: ['pipe', 'pipe', 'pipe'],
   })
 
   const managed: ManagedProcess = {
@@ -48,9 +48,9 @@ export async function startOpenCodeProcess(
   }
   activeProcesses.set(sessionId, managed)
 
-  store.updateSessionStatus(sessionId, "running", { pid: proc.pid ?? null })
+  store.updateSessionStatus(sessionId, 'running', { pid: proc.pid ?? null })
 
-  const handleData = (stream: "stdout" | "stderr") => (data: Buffer) => {
+  const handleData = (stream: 'stdout' | 'stderr') => (data: Buffer) => {
     const text = data.toString()
     const log: LogRow = {
       id: uuidv4(),
@@ -63,17 +63,17 @@ export async function startOpenCodeProcess(
   }
 
   if (proc.stdout) {
-    proc.stdout.on("data", handleData("stdout"))
+    proc.stdout.on('data', handleData('stdout'))
   }
   if (proc.stderr) {
-    proc.stderr.on("data", handleData("stderr"))
+    proc.stderr.on('data', handleData('stderr'))
   }
 
   return new Promise((resolve) => {
-    proc.on("close", (code) => {
+    proc.on('close', (code) => {
       const finishedAt = new Date().toISOString()
       const error = code !== 0 ? `Process exited with code ${code}` : null
-      store.updateSessionStatus(sessionId, code === 0 ? "completed" : "failed", {
+      store.updateSessionStatus(sessionId, code === 0 ? 'completed' : 'failed', {
         finishedAt,
         exitCode: code,
         error,
@@ -82,9 +82,9 @@ export async function startOpenCodeProcess(
       resolve()
     })
 
-    proc.on("error", (err) => {
+    proc.on('error', (err) => {
       const finishedAt = new Date().toISOString()
-      store.updateSessionStatus(sessionId, "failed", {
+      store.updateSessionStatus(sessionId, 'failed', {
         finishedAt,
         error: err.message,
       })
@@ -98,13 +98,13 @@ export function sendMessageToProcess(sessionId: string, message: string): boolea
   const managed = activeProcesses.get(sessionId)
   if (!managed || !managed.process.stdin) return false
 
-  managed.process.stdin.write(message + "\n")
+  managed.process.stdin.write(message + '\n')
 
   const log: LogRow = {
     id: uuidv4(),
     sessionId,
     timestamp: new Date().toISOString(),
-    stream: "stdout",
+    stream: 'stdout',
     text: `> ${message}\n`,
   }
   store.insertLog(log)
@@ -115,10 +115,10 @@ export function cancelProcess(sessionId: string): boolean {
   const managed = activeProcesses.get(sessionId)
   if (!managed) return false
 
-  managed.process.kill("SIGTERM")
+  managed.process.kill('SIGTERM')
   setTimeout(() => {
     if (activeProcesses.has(sessionId)) {
-      managed.process.kill("SIGKILL")
+      managed.process.kill('SIGKILL')
     }
   }, 5000)
   return true

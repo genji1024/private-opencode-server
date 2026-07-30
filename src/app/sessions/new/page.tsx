@@ -1,14 +1,14 @@
-"use client"
+'use client'
 
-import React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import React from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function NewSessionPage() {
   const router = useRouter()
 
-  const [repo, setRepo] = React.useState("genji1024/private-note")
-  const [instruction, setInstruction] = React.useState("")
+  const [repo, setRepo] = React.useState('genji1024/private-note')
+  const [instruction, setInstruction] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -20,21 +20,21 @@ export default function NewSessionPage() {
     try {
       setSubmitting(true)
       setError(null)
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ repo, instruction }),
       })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to create session")
+        throw new Error(data.error || 'Failed to create session')
       }
 
       const session = await res.json()
       router.push(`/sessions/${session.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create session")
+      setError(err instanceof Error ? err.message : 'Failed to create session')
     } finally {
       setSubmitting(false)
     }
@@ -43,10 +43,7 @@ export default function NewSessionPage() {
   return (
     <main className="min-h-screen p-8">
       <div className="max-w-2xl mx-auto">
-        <Link
-          href="/sessions"
-          className="text-blue-600 hover:underline mb-4 inline-block"
-        >
+        <Link href="/sessions" className="text-blue-600 hover:underline mb-4 inline-block">
           ← 一覧に戻る
         </Link>
 
@@ -54,9 +51,7 @@ export default function NewSessionPage() {
 
         <form onSubmit={handleSubmit} className="bg-white border rounded-lg p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              リポジトリ
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">リポジトリ</label>
             <input
               type="text"
               value={repo}
@@ -68,9 +63,7 @@ export default function NewSessionPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              指示文
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">指示文</label>
             <textarea
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
@@ -81,11 +74,7 @@ export default function NewSessionPage() {
             />
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded text-sm">
-              {error}
-            </div>
-          )}
+          {error && <div className="bg-red-50 text-red-700 p-3 rounded text-sm">{error}</div>}
 
           <div className="flex gap-3">
             <button
@@ -93,7 +82,7 @@ export default function NewSessionPage() {
               disabled={submitting}
               className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
-              {submitting ? "作成中..." : "作成"}
+              {submitting ? '作成中...' : '作成'}
             </button>
             <Link
               href="/sessions"

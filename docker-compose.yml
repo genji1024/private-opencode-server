@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     environment:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
@@ -24,14 +24,14 @@ services:
       context: .
       dockerfile: Dockerfile.opencode
     ports:
-      - "4096:4096"
+      - '4096:4096'
     environment:
       - OPENCODE_API_KEY=${OPENCODE_API_KEY}
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
       - STREAMABLE_HTTP_AUTH_TOKEN=${STREAMABLE_HTTP_AUTH_TOKEN}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:4096"]
+      test: ['CMD', 'wget', '--spider', 'http://localhost:4096']
       interval: 10s
       timeout: 5s
       retries: 3

@@ -1,21 +1,21 @@
-import { spawn, ChildProcess } from "child_process"
-import { resolve as pathResolve } from "path"
-import { existsSync } from "fs"
+import { spawn, ChildProcess } from 'child_process'
+import { resolve as pathResolve } from 'path'
+import { existsSync } from 'fs'
 
 let serverProcess: ChildProcess | null = null
 let isRunning = false
 
 export function getServerUrl(): string {
-  return process.env.OPENCODE_SERVER_URL ?? "http://127.0.0.1:4096"
+  return process.env.OPENCODE_SERVER_URL ?? 'http://127.0.0.1:4096'
 }
 
 function isRemoteServer(): boolean {
   try {
     const parsed = new URL(getServerUrl())
     return (
-      parsed.hostname !== "127.0.0.1" &&
-      parsed.hostname !== "localhost" &&
-      parsed.hostname !== "0.0.0.0"
+      parsed.hostname !== '127.0.0.1' &&
+      parsed.hostname !== 'localhost' &&
+      parsed.hostname !== '0.0.0.0'
     )
   } catch {
     return false
@@ -46,7 +46,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
   if (isRemoteServer()) {
     throw new Error(
-      "OpenCode サーバーに接続できません。opencode-srv コンテナが起動しているか確認してください。",
+      'OpenCode サーバーに接続できません。opencode-srv コンテナが起動しているか確認してください。',
     )
   }
 
@@ -57,21 +57,21 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   const port = parseInt(new URL(url).port, 10) || 4096
 
   function getOpencodeBin(): string {
-    const localBin = pathResolve(process.cwd(), "node_modules", ".bin", "opencode")
+    const localBin = pathResolve(process.cwd(), 'node_modules', '.bin', 'opencode')
     if (existsSync(localBin)) {
       return localBin
     }
-    return "opencode"
+    return 'opencode'
   }
 
   const bin = getOpencodeBin()
 
   return new Promise((resolvePromise, reject) => {
-    const proc = spawn(bin, ["serve", "--port", String(port)], {
-      stdio: ["ignore", "pipe", "pipe"],
+    const proc = spawn(bin, ['serve', '--port', String(port)], {
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        HOME: process.env.HOME || "/tmp",
+        HOME: process.env.HOME || '/tmp',
       },
     })
 
@@ -79,7 +79,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
     isRunning = true
 
     let settled = false
-    let stderrOutput = ""
+    let stderrOutput = ''
 
     const timeout = setTimeout(async () => {
       if (settled) return
@@ -90,11 +90,11 @@ export async function startServer(): Promise<{ url: string; port: number }> {
         settled = true
         isRunning = false
         serverProcess = null
-        reject(new Error("opencode serve が起動しましたが、接続できませんでした。"))
+        reject(new Error('opencode serve が起動しましたが、接続できませんでした。'))
       }
     }, 8000)
 
-    proc.on("error", (err) => {
+    proc.on('error', (err) => {
       if (settled) return
       settled = true
       isRunning = false
@@ -103,20 +103,18 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       reject(new Error(`opencode serve の起動に失敗しました: ${err.message}`))
     })
 
-    proc.on("close", (code) => {
+    proc.on('close', (code) => {
       isRunning = false
       serverProcess = null
       if (!settled) {
         settled = true
         clearTimeout(timeout)
-        const detail = stderrOutput.trim()
-          ? ` (stderr: ${stderrOutput.trim()})`
-          : ""
+        const detail = stderrOutput.trim() ? ` (stderr: ${stderrOutput.trim()})` : ''
         reject(new Error(`opencode serve が終了しました (exit code: ${code})${detail}`))
       }
     })
 
-    proc.stderr?.on("data", (data) => {
+    proc.stderr?.on('data', (data) => {
       stderrOutput += data.toString()
     })
   })
@@ -129,15 +127,13 @@ export function stopServer(): boolean {
   if (!serverProcess || !isRunning) return false
 
   try {
-    serverProcess.kill("SIGTERM")
-  } catch {
-  }
+    serverProcess.kill('SIGTERM')
+  } catch {}
 
   setTimeout(() => {
     try {
-      serverProcess?.kill("SIGKILL")
-    } catch {
-    }
+      serverProcess?.kill('SIGKILL')
+    } catch {}
   }, 5000)
 
   isRunning = false
@@ -157,7 +153,7 @@ export async function getServerStatus() {
     running,
     port: parseInt(new URL(getServerUrl()).port, 10) || 4096,
     url: getServerUrl(),
-    pid: !isRemoteServer() ? serverProcess?.pid ?? null : null,
+    pid: !isRemoteServer() ? (serverProcess?.pid ?? null) : null,
     opencodeAvailable: reachable || true,
     remoteServer: isRemoteServer(),
   }

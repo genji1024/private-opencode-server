@@ -26,3 +26,24 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create .env file for CI
+        run: bash .github/scripts/setup-env.sh
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          OPENCODE_SERVER_PASSWORD: ${{ secrets.OPENCODE_SERVER_PASSWORD }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+      - name: Validate compose file syntax
+        run: docker compose config --quiet
+      - name: Build and start services
+        run: docker compose up -d --build
+      - name: Wait for service to be healthy
+        run: bash .github/scripts/wait-for-health.sh http://localhost:3000 60
+      - name: Cleanup
+        if: always()
+        run: docker compose down

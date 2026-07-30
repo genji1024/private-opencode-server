@@ -26,3 +26,17 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose file syntax
+        run: docker compose config --quiet
+      - name: Build Docker images
+        run: docker compose build
+      # docker compose up -d はスキップする。
+      # コンテナの起動には ADMIN_PASSWORD / OPENCODE_API_KEY などの
+      # シークレット環境変数が必須だが、CI ではこれらを利用できないため。
+      # ビルド検証のみで十分と判断する。

@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+cat > .env <<EOF
+ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:-test-admin-password}
+OPENCODE_SERVER_URL=${OPENCODE_SERVER_URL:-http://127.0.0.1:4096}
+OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD:-test-server-password}
+GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-test-webhook-secret}
+EOF

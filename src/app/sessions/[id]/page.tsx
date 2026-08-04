@@ -3,6 +3,23 @@
 import React from 'react'
 import Link from 'next/link'
 import { SessionRow, LogRow } from '@/lib/store'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
 
 export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return <SessionDetail params={params} />
@@ -22,6 +39,7 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
   const [message, setMessage] = React.useState('')
   const [sending, setSending] = React.useState(false)
   const [sendError, setSendError] = React.useState<string | null>(null)
+  const [showCancelDialog, setShowCancelDialog] = React.useState(false)
 
   const fetchSession = React.useCallback(async () => {
     if (!resolvedId) return
@@ -97,32 +115,55 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
     }
   }
 
-  async function handleCancel() {
+  async function handleCancelConfirm() {
     if (!resolvedId) return
-    if (!confirm('このセッションをキャンセルしますか？')) return
     try {
       const res = await fetch(`/api/sessions/${resolvedId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to cancel session')
+      toast.success('セッションをキャンセルしました')
+      setShowCancelDialog(false)
       fetchSession()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Cancel failed')
+      toast.error(err instanceof Error ? err.message : 'キャンセルに失敗しました')
+      setShowCancelDialog(false)
     }
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen p-8">
-        <div className="text-gray-500">読み込み中...</div>
+      <main className="min-h-screen p-6 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <Skeleton className="h-4 w-24" />
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-40" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <Skeleton className="h-5 w-16 mb-4" />
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </main>
     )
   }
 
   if (error || !session) {
     return (
-      <main className="min-h-screen p-8">
-        <div className="text-red-500">
-          {error || 'セッションが見つかりません'}
-          <Link href="/sessions" className="block mt-4 text-blue-600 hover:underline">
+      <main className="min-h-screen p-6 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <Alert variant="destructive">
+            <AlertDescription>{error || 'セッションが見つかりません'}</AlertDescription>
+          </Alert>
+          <Link href="/sessions" className={buttonVariants({ variant: 'link', className: 'mt-4' })}>
             ← 一覧に戻る
           </Link>
         </div>
@@ -137,121 +178,158 @@ function SessionDetail({ params }: { params: Promise<{ id: string }> }) {
     pending: '待機中',
   }
 
+  const statusVariants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+    running: 'default',
+    completed: 'secondary',
+    failed: 'destructive',
+    pending: 'outline',
+  }
+
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/sessions" className="text-blue-600 hover:underline mb-4 inline-block">
+        <Link
+          href="/sessions"
+          className={buttonVariants({ variant: 'link', className: 'mb-4 -ml-2' })}
+        >
           ← 一覧に戻る
         </Link>
 
-        <div className="bg-white border rounded-lg p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <h1 className="text-2xl font-bold">セッション詳細</h1>
-            {session.status === 'running' && (
-              <button
-                onClick={handleCancel}
-                className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
-              >
-                キャンセル
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500">ID:</span>
-              <span className="ml-2 font-mono">{session.id}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">ステータス:</span>
-              <span className="ml-2">{statusLabels[session.status] || session.status}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">リポジトリ:</span>
-              <span className="ml-2">{session.repo}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">イベント:</span>
-              <span className="ml-2">{session.event}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">開始時刻:</span>
-              <span className="ml-2">{formatDate(session.startedAt)}</span>
-            </div>
-            {session.finishedAt && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-start">
               <div>
-                <span className="text-gray-500">終了時刻:</span>
-                <span className="ml-2">{formatDate(session.finishedAt)}</span>
+                <CardTitle>セッション詳細</CardTitle>
               </div>
-            )}
-            {session.exitCode !== null && (
-              <div>
-                <span className="text-gray-500">終了コード:</span>
-                <span className="ml-2 font-mono">{session.exitCode}</span>
-              </div>
-            )}
-            {session.error && (
-              <div className="col-span-2">
-                <span className="text-gray-500">エラー:</span>
-                <pre className="mt-1 p-2 bg-red-50 text-red-700 rounded text-xs overflow-x-auto">
-                  {session.error}
-                </pre>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white border rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-bold mb-4">ログ</h2>
-          <div className="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-xs h-96 overflow-y-auto">
-            {logs.length === 0 ? (
-              <div className="text-gray-500">ログはまだありません</div>
-            ) : (
-              logs.map((log) => (
-                <div
-                  key={log.id}
-                  className={`${log.stream === 'stderr' ? 'text-red-400' : 'text-gray-100'}`}
-                >
-                  <span className="text-gray-500 mr-2">
-                    {new Date(log.timestamp).toLocaleTimeString('ja-JP')}
-                  </span>
-                  {log.text}
+              {session.status === 'running' && (
+                <Button variant="destructive" size="sm" onClick={() => setShowCancelDialog(true)}>
+                  キャンセル
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <DetailRow label="ID" value={session.id} mono />
+              <DetailRow
+                label="ステータス"
+                value={
+                  <Badge variant={statusVariants[session.status] || 'outline'}>
+                    {statusLabels[session.status] || session.status}
+                  </Badge>
+                }
+              />
+              <DetailRow label="リポジトリ" value={session.repo} />
+              <DetailRow label="イベント" value={session.event} />
+              <DetailRow label="開始時刻" value={formatDate(session.startedAt)} />
+              {session.finishedAt && (
+                <DetailRow label="終了時刻" value={formatDate(session.finishedAt)} />
+              )}
+              {session.exitCode !== null && (
+                <DetailRow label="終了コード" value={String(session.exitCode)} mono />
+              )}
+              {session.error && (
+                <div className="col-span-2">
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      <span className="font-medium">エラー: </span>
+                      <pre className="mt-1 text-xs overflow-x-auto whitespace-pre-wrap">
+                        {session.error}
+                      </pre>
+                    </AlertDescription>
+                  </Alert>
                 </div>
-              ))
-            )}
-            {session.status === 'running' && (
-              <div className="text-gray-500 animate-pulse mt-2">ログを受信中...</div>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>ログ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-muted rounded-lg p-4 font-mono text-xs h-96 overflow-y-auto">
+              {logs.length === 0 ? (
+                <div className="text-muted-foreground">ログはまだありません</div>
+              ) : (
+                logs.map((log) => (
+                  <div key={log.id} className={log.stream === 'stderr' ? 'text-destructive' : ''}>
+                    <span className="text-muted-foreground mr-2">
+                      {new Date(log.timestamp).toLocaleTimeString('ja-JP')}
+                    </span>
+                    {log.text}
+                  </div>
+                ))
+              )}
+              {session.status === 'running' && (
+                <div className="text-muted-foreground animate-pulse mt-2">ログを受信中...</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {session.status === 'running' && (
-          <div className="bg-white border rounded-lg p-6">
-            <h2 className="text-lg font-bold mb-4">メッセージを送信</h2>
-            <form onSubmit={handleSendMessage}>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="opencode に送信する指示を入力..."
-                rows={3}
-                className="w-full border rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {sendError && <p className="text-red-500 text-sm mt-2">{sendError}</p>}
-              <button
-                type="submit"
-                disabled={sending || !message.trim()}
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                {sending ? '送信中...' : '送信'}
-              </button>
-            </form>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>メッセージを送信</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSendMessage} className="space-y-4">
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="opencode に送信する指示を入力..."
+                  rows={3}
+                />
+                {sendError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{sendError}</AlertDescription>
+                  </Alert>
+                )}
+                <Button type="submit" disabled={sending || !message.trim()}>
+                  {sending ? '送信中...' : '送信'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         )}
       </div>
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>セッションをキャンセル</AlertDialogTitle>
+            <AlertDialogDescription>
+              このセッションをキャンセルしますか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelConfirm}>確認</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 
   function formatDate(iso: string): string {
     return new Date(iso).toLocaleString('ja-JP')
   }
+}
+
+function DetailRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string
+  value: React.ReactNode
+  mono?: boolean
+}) {
+  return (
+    <div>
+      <span className="text-muted-foreground">{label}: </span>
+      <span className={mono ? 'font-mono' : ''}>{value}</span>
+    </div>
+  )
 }

@@ -11,13 +11,13 @@ services:
       - OPENCODE_SERVER_URL=http://opencode-srv:4096
       - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
-      - DATA_DIR=/tmp/opencode-server-data
+      - DATA_DIR=/app/data
     restart: unless-stopped
     depends_on:
       opencode-srv:
         condition: service_started
     volumes:
-      - app-data:/tmp/opencode-server-data
+      - app-data:/app/data
 
   opencode-srv:
     build:

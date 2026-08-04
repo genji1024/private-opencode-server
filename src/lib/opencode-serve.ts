@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from 'child_process'
+import { spawn, execSync, ChildProcess } from 'child_process'
 import { resolve as pathResolve } from 'path'
 import { existsSync } from 'fs'
 
@@ -35,6 +35,18 @@ async function isServerReachable(): Promise<boolean> {
   }
 }
 
+function tryKillPort(port: number): void {
+  try {
+    execSync(
+      `fuser -k ${port}/tcp 2>/dev/null || lsof -ti:${port} | xargs kill -9 2>/dev/null || true`,
+      {
+        stdio: 'ignore',
+        timeout: 3000,
+      },
+    )
+  } catch {}
+}
+
 export async function startServer(): Promise<{ url: string; port: number }> {
   const url = getServerUrl()
 
@@ -66,12 +78,18 @@ export async function startServer(): Promise<{ url: string; port: number }> {
 
   const bin = getOpencodeBin()
 
+  tryKillPort(port)
+
   return new Promise((resolvePromise, reject) => {
-    const proc = spawn(bin, ['serve', '--port', String(port)], {
+    const proc = spawn(bin, ['serve', '--print-logs', '--port', String(port)], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
         HOME: process.env.HOME || '/tmp',
+        XDG_CONFIG_HOME:
+          process.env.XDG_CONFIG_HOME || pathResolve(process.env.HOME || '/tmp', '.config'),
+        XDG_DATA_HOME:
+          process.env.XDG_DATA_HOME || pathResolve(process.env.HOME || '/tmp', '.local', 'share'),
       },
     })
 

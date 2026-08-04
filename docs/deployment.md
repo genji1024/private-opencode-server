@@ -83,7 +83,7 @@ server {
 
 ### データ永続化
 
-Docker Compose は `app-data` ボリュームを使用し、`/tmp/opencode-server-data` にデータを保存します。コンテナを再起動してもセッション・ログ・設定は保持されます。
+Docker Compose は `app-data` ボリュームを使用し、`/app/data` にデータを保存します。コンテナを再起動してもセッション・ログ・設定は保持されます。
 
 ## デプロイ後の確認
 

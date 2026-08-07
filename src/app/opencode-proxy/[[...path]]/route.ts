@@ -43,6 +43,10 @@ async function proxy(req: NextRequest, segments: string[]): Promise<NextResponse
     } else {
       html = INJECT_SCRIPT + html
     }
+    html = html.replace(
+      /(\s)(src|href)=["']\/((?!\/|opencode-proxy\/)[^"']*)["']/gi,
+      '$1$2="/opencode-proxy/$3"',
+    )
     return new NextResponse(html, { status: backendRes.status, headers: resHeaders })
   }
 

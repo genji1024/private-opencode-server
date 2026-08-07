@@ -9,6 +9,10 @@ export function getServerUrl(): string {
   return process.env.OPENCODE_SERVER_URL ?? 'http://127.0.0.1:4096'
 }
 
+export function getIframeUrl(): string {
+  return '/opencode-proxy'
+}
+
 function isRemoteServer(): boolean {
   try {
     const parsed = new URL(getServerUrl())
@@ -53,7 +57,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   if (await isServerReachable()) {
     isRunning = true
     const parsed = new URL(url)
-    return { url, port: parseInt(parsed.port, 10) || 4096 }
+    return { url: getIframeUrl(), port: parseInt(parsed.port, 10) || 4096 }
   }
 
   if (isRemoteServer()) {
@@ -63,7 +67,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
   }
 
   if (isRunning && serverProcess && !serverProcess.killed) {
-    return { url, port: parseInt(new URL(url).port, 10) || 4096 }
+    return { url: getIframeUrl(), port: parseInt(new URL(url).port, 10) || 4096 }
   }
 
   const port = parseInt(new URL(url).port, 10) || 4096
@@ -103,7 +107,7 @@ export async function startServer(): Promise<{ url: string; port: number }> {
       if (settled) return
       if (await isServerReachable()) {
         settled = true
-        resolvePromise({ url, port })
+        resolvePromise({ url: getIframeUrl(), port })
       } else {
         settled = true
         isRunning = false
@@ -170,7 +174,7 @@ export async function getServerStatus() {
   return {
     running,
     port: parseInt(new URL(getServerUrl()).port, 10) || 4096,
-    url: getServerUrl(),
+    url: getIframeUrl(),
     pid: !isRemoteServer() ? (serverProcess?.pid ?? null) : null,
     opencodeAvailable: reachable || true,
     remoteServer: isRemoteServer(),

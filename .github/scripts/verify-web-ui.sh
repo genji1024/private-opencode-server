@@ -23,7 +23,7 @@ echo "NEXT_PID=$NEXT_PID" >> "$GITHUB_ENV"
 echo "NEXT_PORT=$NEXT_PORT" >> "$GITHUB_ENV"
 
 for i in $(seq 1 30); do
-  HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' -b "$COOKIE" "$BASE_URL/opencode" 2>/dev/null || true)
+  HTTP_CODE=$(curl -s --max-time 5 --connect-timeout 3 -o /dev/null -w '%{http_code}' -b "$COOKIE" "$BASE_URL/opencode" 2>/dev/null || true)
   if [ "$HTTP_CODE" = "200" ]; then
     echo "Next.js app is ready (attempt $i, HTTP $HTTP_CODE)"
     break
@@ -36,7 +36,7 @@ if [ "$HTTP_CODE" != "200" ]; then
   exit 1
 fi
 
-BODY=$(curl -s -b "$COOKIE" "$BASE_URL/opencode")
+BODY=$(curl -s --max-time 5 --connect-timeout 3 -b "$COOKIE" "$BASE_URL/opencode")
 if [ -z "$BODY" ]; then
   echo "ERROR: /opencode returned an empty body"
   exit 1
@@ -47,7 +47,7 @@ if echo "$BODY" | grep -q "CLI が見つかりません"; then
   exit 1
 fi
 
-STATUS=$(curl -s -b "$COOKIE" "$BASE_URL/api/opencode-serve")
+STATUS=$(curl -s --max-time 5 --connect-timeout 3 -b "$COOKIE" "$BASE_URL/api/opencode-serve")
 if ! echo "$STATUS" | grep -q '"running":true'; then
   echo "ERROR: /api/opencode-serve does not report running=true"
   echo "Response: $STATUS"

@@ -92,7 +92,7 @@ jobs:
       - name: Build and start services
         run: docker compose up -d --build
       - name: Wait for service to be healthy
-        run: bash .github/scripts/wait-for-health.sh http://localhost:3000 60
+        run: bash .github/scripts/wait-for-health.sh http://localhost:3001 60
       - name: Cleanup
         if: always()
         run: docker compose down

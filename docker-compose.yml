@@ -31,7 +31,7 @@ services:
       - STREAMABLE_HTTP_AUTH_TOKEN=${STREAMABLE_HTTP_AUTH_TOKEN}
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'wget', '--spider', 'http://localhost:4096']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:4096']
       interval: 10s
       timeout: 5s
       retries: 3

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-URL="${1:-http://localhost:3000}"
+URL="${1:-http://localhost:3001}"
 TIMEOUT_SEC="${2:-60}"
 INTERVAL=2
 MAX_ATTEMPTS=$(( TIMEOUT_SEC / INTERVAL ))

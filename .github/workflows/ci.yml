@@ -27,6 +27,55 @@ jobs:
       - run: npm install
       - run: npm run build
 
+  # Verifies that opencode serve starts, stays running, and responds to requests
+  opencode-serve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Start opencode serve in background
+        run: bash .github/scripts/start-opencode-serve.sh
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+          STREAMABLE_HTTP_AUTH_TOKEN: ${{ secrets.STREAMABLE_HTTP_AUTH_TOKEN }}
+      - name: Verify server is reachable and stable
+        run: bash .github/scripts/verify-opencode-serve.sh
+      - name: Cleanup
+        if: always()
+        run: kill "$SERVER_PID" 2>/dev/null || true
+
+  # Verifies the Next.js Web UI renders against a running opencode serve
+  web-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - name: Start opencode serve in background
+        run: bash .github/scripts/start-opencode-serve.sh
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+          STREAMABLE_HTTP_AUTH_TOKEN: ${{ secrets.STREAMABLE_HTTP_AUTH_TOKEN }}
+      - name: Verify Web UI renders against opencode serve
+        run: bash .github/scripts/verify-web-ui.sh
+        env:
+          OPENCODE_SERVER_URL: http://127.0.0.1:4096
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: test-admin-password
+      - name: Cleanup
+        if: always()
+        run: kill "$SERVER_PID" 2>/dev/null || true; kill "$NEXT_PID" 2>/dev/null || true
+
   docker-build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -43,7 +92,7 @@ jobs:
       - name: Build and start services
         run: docker compose up -d --build
       - name: Wait for service to be healthy
-        run: bash .github/scripts/wait-for-health.sh http://localhost:3000 60
+        run: bash .github/scripts/wait-for-health.sh http://localhost:3001 60
       - name: Cleanup
         if: always()
         run: docker compose down

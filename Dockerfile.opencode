@@ -1,0 +1,24 @@
+FROM node:26.5.0-alpine3.23 AS installer
+WORKDIR /tmp
+RUN mkdir -p /tmp/install && cd /tmp/install && npm init -y && npm install opencode-ai
+
+FROM node:26.5.0-alpine3.23 AS runner
+RUN addgroup --system --gid 1001 opencode
+RUN adduser --system --uid 1001 opencode
+
+COPY --from=installer /tmp/install/node_modules/opencode-ai/bin/opencode.exe /usr/local/bin/opencode
+RUN chmod +x /usr/local/bin/opencode
+
+RUN mkdir -p /home/opencode/.local/share/opencode /home/opencode/.config/opencode
+RUN chown -R opencode:opencode /home/opencode
+
+COPY docker-entrypoint-opencode.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER opencode
+ENV HOME=/home/opencode
+ENV PORT=4096
+EXPOSE 4096
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["opencode", "serve", "--hostname", "0.0.0.0", "--port", "4096"]

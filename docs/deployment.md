@@ -60,7 +60,7 @@ docker compose up -d
 | `OPENCODE_SERVER_URL`      | いいえ | `http://127.0.0.1:4096` | opencode serve の URL                                 |
 | `OPENCODE_SERVER_PASSWORD` | いいえ | —                       | opencode serve のパスワード                           |
 | `GITHUB_WEBHOOK_SECRET`    | いいえ | —                       | GitHub Webhook のシークレット                         |
-| `PORT`                     | いいえ | `3000`                  | ホストに公開するポート                                |
+| `PORT`                     | いいえ | `3001`                  | ホストに公開するポート                                |
 | `BASE_URL`                 | いいえ | 自動判定                | ベース URL の手動指定。未設定時はヘッダーから自動判定 |
 
 ### リバースプロキシ配下での利用
@@ -73,7 +73,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;
@@ -83,7 +83,7 @@ server {
 
 ### データ永続化
 
-Docker Compose は `app-data` ボリュームを使用し、`/tmp/opencode-server-data` にデータを保存します。コンテナを再起動してもセッション・ログ・設定は保持されます。
+Docker Compose は `app-data` ボリュームを使用し、`/app/data` にデータを保存します。コンテナを再起動してもセッション・ログ・設定は保持されます。
 
 ## デプロイ後の確認
 
